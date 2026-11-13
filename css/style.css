@@ -305,7 +305,8 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
   .filter-group { flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; }
   .chips { flex-wrap: nowrap; overflow-x: auto; width: 100%; padding-bottom: 2px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
-  .chip { min-height: 38px; padding: 0 14px; }
+  .chips { gap: 6px; }
+  .chip { min-height: 38px; padding: 0 8px; font-size: .9rem; flex: 1 1 auto; white-space: nowrap; }
   .map-panel { min-height: 360px; }
   .map-area-badge { font-size: .95rem; padding: 8px 12px; top: 10px; left: 10px; }
   .map-expand { top: 10px; right: 10px; }
