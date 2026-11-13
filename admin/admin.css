@@ -63,3 +63,28 @@ fieldset.money { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr))
   form .grid, fieldset.money { grid-template-columns: 1fr; }
   .span2 { grid-column: auto; }
 }
+
+/* GitHub 게시 */
+.btn-orange { background: #e2590b; color: #fff; }
+.btn-orange:hover { background: #c94d07; }
+.btn[disabled] { opacity: .55; cursor: progress; }
+.a-header-actions { align-items: center; }
+.gh-state { background: none; border: 1px dashed rgba(255,255,255,.5); color: #f3c9b0; border-radius: 999px; padding: 6px 12px; font-weight: 700; cursor: pointer; }
+.gh-state.on { color: #7fe0a0; border-style: solid; border-color: rgba(127,224,160,.6); }
+.more { position: relative; }
+.more summary { list-style: none; }
+.more summary::-webkit-details-marker { display: none; }
+.more-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 1000; background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.2); min-width: 240px; padding: 6px; display: grid; }
+.more-menu button, .more-menu label { display: block; text-align: left; background: none; border: 0; padding: 10px 12px; border-radius: 8px; font-weight: 600; font-size: .95rem; cursor: pointer; }
+.more-menu button:hover, .more-menu label:hover { background: #f1f4f6; }
+.a-msg a { font-weight: 800; color: inherit; }
+.gh-dialog { width: min(640px, calc(100% - 24px)); border: 0; border-radius: 14px; padding: 0; box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+.gh-dialog::backdrop { background: rgba(10,20,30,.5); }
+.gh-form { padding: 20px 22px; display: grid; gap: 12px; }
+.gh-form h2 { font-size: 1.25rem; }
+.gh-form ol { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 4px; font-size: .92rem; }
+.gh-form summary { cursor: pointer; font-weight: 700; }
+.gh-test-result { font-weight: 700; min-height: 1.2em; }
+.gh-test-result.ok { color: var(--green); }
+.gh-test-result.bad { color: var(--red); }
+.gh-actions { justify-content: flex-end; }

@@ -31,6 +31,15 @@ window.SITE_CONFIG = {
     provider: "osm"
   },
 
+  // 관리자 화면의 [홈페이지에 게시]가 매물 데이터를 올릴 GitHub 저장소 (공개 정보)
+  // 토큰(비밀번호 역할)은 여기에 절대 넣지 말고, 관리자 화면의 [GitHub 연결 설정]에서만 입력하세요.
+  github: {
+    owner: "iamsunghanetrikorea",
+    repo: "budongsan-homepage",
+    branch: "main",
+    pagesUrl: "https://iamsunghanetrikorea.github.io/budongsan-homepage/"
+  },
+
   data: {
     url: "data/properties.json",
     // 로컬(localhost, file)에서 열 때만 예시 매물을 보여줍니다. GitHub Pages 에서는 실제 데이터만 표시.

@@ -14,7 +14,7 @@
     "areaM2", "supplyAreaM2", "floor", "totalFloors", "rooms", "baths", "moveInDate", "addressDong", "latitude", "longitude",
     "highlights", "description", "images", "featured", "status", "updatedAt", "lastCheckedAt"];
 
-  var state = { items: [], editingId: null, dirty: false };
+  var state = { items: [], editingId: null, dirty: false, baseSha: null, pending: {} };
   var map, pickMarker;
 
   /* ---------- 유틸 ---------- */
@@ -23,11 +23,12 @@
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
 
-  function msg(text, isErr) {
+  function msg(text, isErr, sticky, link) {
     var box = $("#msg");
-    box.innerHTML = '<div class="m' + (isErr ? " err" : "") + '">' + RE.escapeHTML(text) + "</div>";
+    box.innerHTML = '<div class="m' + (isErr ? " err" : "") + '">' + RE.escapeHTML(text) +
+      (link ? ' <a href="' + RE.escapeHTML(link.href) + '" target="_blank" rel="noopener">' + RE.escapeHTML(link.text) + "</a>" : "") + "</div>";
     clearTimeout(msg.t);
-    msg.t = setTimeout(function () { box.innerHTML = ""; }, isErr ? 9000 : 4000);
+    if (!sticky) msg.t = setTimeout(function () { box.innerHTML = ""; }, isErr ? 12000 : 5000);
   }
 
   function nextId() {
@@ -40,7 +41,7 @@
   }
 
   function saveDraft() {
-    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ savedAt: new Date().toISOString(), items: state.items })); } catch (e) { /* 무시 */ }
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ savedAt: new Date().toISOString(), items: state.items, baseSha: state.baseSha, dirty: state.dirty })); } catch (e) { /* 무시 */ }
   }
 
   function normalizeOrder(p) {
@@ -58,6 +59,8 @@
     if (!Array.isArray(list)) throw new Error("JSON 최상위가 배열이 아닙니다.");
     state.items = list.map(normalizeOrder);
     state.dirty = false;
+    state.baseSha = null;
+    state.pending = {};
     closeEditor();
     renderRows();
     saveDraft();
@@ -76,37 +79,28 @@
     e.target.value = "";
   });
 
-  $("#load-repo").addEventListener("click", function () {
-    if (location.protocol === "file:") {
-      msg("파일로 직접 연 경우 브라우저 보안상 자동 읽기가 안 됩니다. [properties.json 불러오기]를 사용하세요.", true);
-      return;
-    }
-    if (state.dirty && !confirm("저장하지 않은 작업이 있습니다. 덮어쓸까요?")) return;
-    fetch("../" + CFG.data.url + "?v=" + Date.now(), { cache: "no-store" })
-      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-      .then(function (d) { setItems(d, "저장소 data/properties.json"); })
-      .catch(function (err) { msg("읽기 실패: " + err.message, true); });
-  });
-
-  $("#export").addEventListener("click", function () {
+  /** 게시 가능 여부: 문제가 있으면 오류 문구 반환 */
+  function checkPublishable() {
     var problems = [];
     state.items.forEach(function (p) {
       var errs = validate(p).filter(function (e) { return !e.warn; });
       if (errs.length && p.status === "published") problems.push(p.id + ": " + errs[0].text);
     });
-    if (problems.length) {
-      msg("공개 매물에 오류가 있어 내보낼 수 없습니다 → " + problems.slice(0, 3).join(" / "), true);
-      return;
-    }
+    if (problems.length) return "공개 매물에 오류가 있습니다 → " + problems.slice(0, 3).join(" / ");
     var ids = {};
     var dup = state.items.filter(function (p) { if (ids[p.id]) return true; ids[p.id] = 1; return false; });
-    if (dup.length) { msg("중복된 매물번호가 있습니다: " + dup.map(function (p) { return p.id; }).join(", "), true); return; }
+    if (dup.length) return "중복된 매물번호가 있습니다: " + dup.map(function (p) { return p.id; }).join(", ");
+    return null;
+  }
 
-    var data = state.items.map(normalizeOrder).sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); });
-    var blob = new Blob([JSON.stringify(data, null, 2) + "\n"], { type: "application/json" });
+  function exportData() {
+    return state.items.map(normalizeOrder).sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); });
+  }
+
+  $("#export").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(exportData(), null, 2) + "\n"], { type: "application/json" });
     downloadBlob(blob, "properties.json");
-    state.dirty = false;
-    msg("properties.json을 다운로드했습니다. 저장소의 data/ 폴더 파일을 교체한 뒤 GitHub Desktop에서 Commit → Push 하세요.");
+    msg("백업용 properties.json을 다운로드했습니다. (홈페이지 반영은 [홈페이지에 게시]로 합니다)");
   });
 
   function downloadBlob(blob, name) {
@@ -388,7 +382,12 @@
     var list = form.images.value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
     $("#thumbs").innerHTML = list.map(function (src) {
       var ok = RE.isValidImagePath(src);
-      return "<figure><img src=\"../" + RE.escapeHTML(src) + "\" alt=\"\" onerror=\"this.style.opacity=.3\"><figcaption class=\"" + (ok ? "" : "bad") + "\">" + RE.escapeHTML(src) + "</figcaption></figure>";
+      var pending = state.pending[src];
+      var url = pending ? URL.createObjectURL(pending) : "../" + src;
+      var live = (CFG.github && CFG.github.pagesUrl || "") + src;
+      return "<figure><img src=\"" + RE.escapeHTML(url) + "\" alt=\"\" data-live=\"" + RE.escapeHTML(live) + "\" " +
+        "onerror=\"if(this.dataset.live&&this.src!==this.dataset.live){this.src=this.dataset.live}else{this.style.opacity=.3}\">" +
+        "<figcaption class=\"" + (ok ? "" : "bad") + "\">" + (pending ? "⬆ 게시 대기 · " : "") + RE.escapeHTML(src) + "</figcaption></figure>";
     }).join("");
   }
   form.images.addEventListener("input", renderThumbs);
@@ -421,29 +420,275 @@
     files.reduce(function (chain, file, i) {
       return chain.then(function () {
         return toWebP(file, 1600).then(function (blob) {
-          var name = id + "-" + (start + i) + ".webp";
-          downloadBlob(blob, name);
-          existing.push("assets/properties/" + name);
+          var name = id + "-" + Date.now().toString(36) + "-" + (start + i) + ".webp";
+          var path = "assets/properties/" + name;
+          state.pending[path] = blob;
+          if (!ghToken()) downloadBlob(blob, name);
+          existing.push(path);
         });
       });
     }, Promise.resolve()).then(function () {
       form.images.value = existing.join("\n");
       renderThumbs();
-      msg(files.length + "장을 WebP로 변환해 다운로드했습니다. 저장소의 assets/properties/ 폴더로 옮겨 주세요.");
+      state.dirty = true;
+      msg(ghToken()
+        ? files.length + "장을 최적화했습니다. [검증 후 저장] → [홈페이지에 게시]를 누르면 함께 올라갑니다."
+        : files.length + "장을 WebP로 변환해 다운로드했습니다. GitHub 연결 전이므로 저장소의 assets/properties/ 폴더로 직접 옮겨야 합니다.");
     }).catch(function (err) { msg(err.message, true); });
+  });
+
+
+  /* ---------- GitHub 직접 게시 ---------- */
+  var GH = CFG.github || {};
+  var API = "https://api.github.com";
+  var TOKEN_KEY = "doan-admin-gh-token";
+  var DATA_PATH = CFG.data.url; // data/properties.json
+
+  function ghToken() {
+    try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; }
+  }
+
+  function setToken(t, remember) {
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
+      if (t) (remember ? localStorage : sessionStorage).setItem(TOKEN_KEY, t);
+    } catch (e) { /* 저장 불가 환경 */ }
+    updateGhState();
+  }
+
+  function repoPath() { return "/repos/" + encodeURIComponent(GH.owner) + "/" + encodeURIComponent(GH.repo); }
+
+  function ghErrorText(status, data) {
+    var detail = data && data.message ? " (" + data.message + ")" : "";
+    if (status === 401) return "토큰이 올바르지 않거나 만료되었습니다. [GitHub 연결 설정]에서 토큰을 다시 입력하세요.";
+    if (status === 403) return "권한이 없습니다. 토큰의 저장소 선택과 Contents 'Read and write' 권한을 확인하세요." + detail;
+    if (status === 404) return "저장소를 찾을 수 없거나 토큰에 이 저장소 접근 권한이 없습니다." + detail;
+    if (status === 409 || status === 422) return "그 사이 저장소가 변경되었습니다. 잠시 후 다시 [홈페이지에 게시]를 눌러 주세요." + detail;
+    return "GitHub 오류 " + status + detail;
+  }
+
+  function gh(method, path, body) {
+    var headers = { "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+    var t = ghToken();
+    if (t) headers.Authorization = "Bearer " + t;
+    if (body) headers["Content-Type"] = "application/json";
+    return fetch(API + path, { method: method, headers: headers, body: body ? JSON.stringify(body) : undefined, cache: "no-store" })
+      .catch(function () { throw new Error("인터넷 연결을 확인하세요. (GitHub에 접속할 수 없음)"); })
+      .then(function (r) {
+        return r.text().then(function (txt) {
+          var data = null;
+          try { data = txt ? JSON.parse(txt) : null; } catch (e) { /* 무시 */ }
+          if (!r.ok) { var err = new Error(ghErrorText(r.status, data)); err.status = r.status; throw err; }
+          return data;
+        });
+      });
+  }
+
+  function utf8ToB64(str) {
+    var bytes = new TextEncoder().encode(str), bin = "";
+    for (var i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+  }
+
+  function b64ToUtf8(b64) {
+    var bin = atob(String(b64).replace(/\s/g, "")), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bytes);
+  }
+
+  function blobToB64(blob) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(String(r.result).split(",")[1]); };
+      r.onerror = function () { reject(new Error("사진을 읽을 수 없습니다.")); };
+      r.readAsDataURL(blob);
+    });
+  }
+
+  function updateGhState() {
+    var on = !!ghToken();
+    var el = $("#gh-state");
+    el.textContent = on ? "● GitHub 연결됨" : "○ GitHub 미연결";
+    el.classList.toggle("on", on);
+  }
+
+  /* 저장소에서 불러오기 */
+  function ghLoad(silent) {
+    if (state.dirty && !confirm("게시하지 않은 작업이 있습니다. 저장소의 데이터로 덮어쓸까요?")) return Promise.resolve();
+    msg("저장소에서 매물을 불러오는 중…", false, true);
+    return gh("GET", repoPath() + "/contents/" + DATA_PATH + "?ref=" + encodeURIComponent(GH.branch))
+      .then(function (d) {
+        if (!d || !d.content) throw new Error("매물 파일 내용을 읽을 수 없습니다.");
+        setItems(JSON.parse(b64ToUtf8(d.content)), "GitHub 저장소(홈페이지 현재 데이터)");
+        state.baseSha = d.sha;
+      })
+      .catch(function (e) { msg("불러오기 실패: " + e.message, true, !silent); });
+  }
+
+  function commitMessage(data) {
+    var pub = data.filter(function (p) { return p.status === "published"; }).length;
+    return "매물 업데이트: 전체 " + data.length + "건 (공개 " + pub + "건) — 관리자 화면에서 게시";
+  }
+
+  /* 홈페이지에 게시: 매물 데이터 + 새 사진을 커밋 1개로 올림 */
+  function ghPublish() {
+    if (!ghToken()) { openGhDialog(); msg("먼저 GitHub 연결(토큰)을 설정하세요.", true); return; }
+    if (state.editingId && !$("#editor").hidden && !confirm("편집 중인 매물은 [검증 후 저장]을 눌러야 게시에 포함됩니다. 저장된 내용만 게시할까요?")) return;
+    var problem = checkPublishable();
+    if (problem) { msg(problem, true, true); return; }
+    if (!state.items.length && !confirm("매물이 0건입니다. 홈페이지의 매물을 모두 비울까요?")) return;
+
+    var btn = $("#gh-publish");
+    btn.disabled = true;
+    var data = exportData();
+    var json = JSON.stringify(data, null, 2) + "\n";
+    var branch = encodeURIComponent(GH.branch);
+    var headSha, baseTree, remoteSha, newDataSha, uploads = [];
+
+    msg("게시 준비 중… (저장소 상태 확인)", false, true);
+    gh("GET", repoPath() + "/git/ref/heads/" + branch)
+      .then(function (ref) { headSha = ref.object.sha; return gh("GET", repoPath() + "/git/commits/" + headSha); })
+      .then(function (c) { baseTree = c.tree.sha; return gh("GET", repoPath() + "/git/trees/" + baseTree + "?recursive=1"); })
+      .then(function (tree) {
+        var existing = {};
+        tree.tree.forEach(function (e) { if (e.type === "blob") existing[e.path] = e.sha; });
+        remoteSha = existing[DATA_PATH] || null;
+        if (state.baseSha && remoteSha && state.baseSha !== remoteSha) {
+          throw new Error("다른 곳(다른 PC 등)에서 매물 데이터가 먼저 바뀌었습니다. 덮어쓰지 않도록 게시를 멈췄습니다. " +
+            "[더보기 → 백업 JSON 다운로드]로 지금 작업을 보관한 뒤 [저장소에서 불러오기]로 최신 데이터를 받아 다시 반영하세요.");
+        }
+        if (!state.baseSha && !confirm("홈페이지의 매물 데이터를 이 화면의 " + data.length + "건으로 바꿉니다. 계속할까요?\n(다른 곳에서 바뀐 내용이 있다면 사라집니다. 가능하면 [저장소에서 불러오기]로 시작하세요)")) {
+          var cancel = new Error("게시를 취소했습니다."); cancel.cancelled = true; throw cancel;
+        }
+        var needed = {};
+        data.forEach(function (p) { (p.images || []).forEach(function (src) { needed[src] = true; }); });
+        var missing = Object.keys(needed).filter(function (src) { return !state.pending[src] && !existing[src]; });
+        if (missing.length) {
+          throw new Error("올라가 있지 않은 사진이 있습니다: " + missing.slice(0, 3).join(", ") +
+            (missing.length > 3 ? " 외 " + (missing.length - 3) + "개" : "") + " — 해당 매물에서 사진을 다시 선택하거나 경로를 지우세요.");
+        }
+        uploads = Object.keys(state.pending).filter(function (src) { return needed[src]; });
+        return uploads.reduce(function (chain, src, i) {
+          return chain.then(function (entries) {
+            msg("사진 올리는 중… (" + (i + 1) + "/" + uploads.length + ")", false, true);
+            return blobToB64(state.pending[src])
+              .then(function (b64) { return gh("POST", repoPath() + "/git/blobs", { content: b64, encoding: "base64" }); })
+              .then(function (b) { entries.push({ path: src, mode: "100644", type: "blob", sha: b.sha }); return entries; });
+          });
+        }, Promise.resolve([]));
+      })
+      .then(function (entries) {
+        msg("매물 데이터 올리는 중…", false, true);
+        return gh("POST", repoPath() + "/git/blobs", { content: utf8ToB64(json), encoding: "base64" }).then(function (b) {
+          newDataSha = b.sha;
+          if (newDataSha === remoteSha && !entries.length) {
+            var same = new Error("홈페이지와 비교해 바뀐 내용이 없습니다."); same.cancelled = true; throw same;
+          }
+          entries.push({ path: DATA_PATH, mode: "100644", type: "blob", sha: newDataSha });
+          return gh("POST", repoPath() + "/git/trees", { base_tree: baseTree, tree: entries });
+        });
+      })
+      .then(function (t) { return gh("POST", repoPath() + "/git/commits", { message: commitMessage(data), tree: t.sha, parents: [headSha] }); })
+      .then(function (c) {
+        return gh("PATCH", repoPath() + "/git/refs/heads/" + branch, { sha: c.sha, force: false }).then(function () { return c.sha; });
+      })
+      .then(function (commitSha) {
+        state.baseSha = newDataSha;
+        state.pending = {};
+        state.dirty = false;
+        saveDraft();
+        renderThumbs();
+        msg("게시했습니다. 홈페이지에 반영 중… (보통 1~3분)", false, true);
+        watchDeploy(commitSha, Date.now());
+      })
+      .catch(function (e) {
+        if (e.cancelled) msg(e.message);
+        else msg("게시 실패: " + e.message, true, true);
+      })
+      .then(function () { btn.disabled = false; });
+  }
+
+  /* 배포(GitHub Actions) 진행 상황 확인 */
+  function watchDeploy(sha, startedAt) {
+    var site = { href: GH.pagesUrl, text: "홈페이지 열기" };
+    if (Date.now() - startedAt > 6 * 60 * 1000) {
+      msg("게시는 완료됐습니다. 홈페이지 반영이 늦어지고 있으니 잠시 후 새로고침해 보세요.", false, true, site);
+      return;
+    }
+    gh("GET", repoPath() + "/actions/runs?head_sha=" + sha + "&per_page=1")
+      .then(function (d) {
+        var run = d && d.workflow_runs && d.workflow_runs[0];
+        if (run && run.status === "completed") {
+          if (run.conclusion === "success") msg("✓ 홈페이지에 반영되었습니다. 열려 있는 홈페이지는 새로고침하세요.", false, true, site);
+          else msg("배포 중 문제가 생겼습니다 (" + run.conclusion + "). 데이터는 올라갔으니 잠시 후 다시 게시하거나 담당자에게 문의하세요.", true, true, { href: run.html_url, text: "배포 기록 보기" });
+          return;
+        }
+        msg("게시했습니다. 홈페이지 반영 중… (" + (run ? (run.status === "queued" ? "대기" : "배포 진행") : "시작 대기") + ")", false, true);
+        setTimeout(function () { watchDeploy(sha, startedAt); }, 6000);
+      })
+      .catch(function () {
+        // Actions 읽기 권한이 없는 토큰이면 상태 확인 생략
+        msg("게시했습니다. 1~3분 뒤 홈페이지를 새로고침하면 반영됩니다.", false, true, site);
+      });
+  }
+
+  /* 연결 설정 창 */
+  function openGhDialog() {
+    var dlg = $("#gh-dialog");
+    $("#gh-repo-name").textContent = GH.owner + "/" + GH.repo + " (" + GH.branch + ")";
+    $("#gh-token").value = "";
+    $("#gh-token").placeholder = ghToken() ? "저장된 토큰 있음 — 바꾸려면 새 토큰 입력" : "github_pat_...";
+    $("#gh-test-result").textContent = "";
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+  }
+
+  $("#gh-state").addEventListener("click", openGhDialog);
+  $("#gh-settings").addEventListener("click", function () { $(".more").open = false; openGhDialog(); });
+  $("#gh-load").addEventListener("click", function () {
+    if (!GH.owner) { msg("js/config.js의 github 설정이 비어 있습니다.", true); return; }
+    ghLoad(false);
+  });
+  $("#gh-publish").addEventListener("click", ghPublish);
+  $("#gh-forget").addEventListener("click", function () {
+    setToken("", false);
+    $("#gh-test-result").textContent = "이 PC에서 토큰을 삭제했습니다.";
+  });
+  $("#gh-save").addEventListener("click", function () {
+    var input = $("#gh-token").value.trim();
+    var out = $("#gh-test-result");
+    if (input) {
+      if (!/^(github_pat_|ghp_)[A-Za-z0-9_]+$/.test(input)) { out.className = "gh-test-result bad"; out.textContent = "토큰 형식이 아닙니다. github_pat_ 로 시작하는 값을 그대로 붙여넣으세요."; return; }
+      setToken(input, $("#gh-remember").checked);
+    }
+    if (!ghToken()) { out.className = "gh-test-result bad"; out.textContent = "토큰을 입력하세요."; return; }
+    out.className = "gh-test-result"; out.textContent = "연결 확인 중…";
+    gh("GET", repoPath())
+      .then(function (repo) {
+        if (repo.permissions && repo.permissions.push === false) throw new Error("이 계정은 저장소에 쓰기 권한이 없습니다.");
+        out.className = "gh-test-result ok";
+        out.textContent = "✓ 연결되었습니다: " + repo.full_name + ". 이제 [홈페이지에 게시]를 사용할 수 있습니다. (쓰기 권한은 첫 게시 때 최종 확인됩니다)";
+        $("#gh-token").value = "";
+        if (!state.items.length && !state.dirty) ghLoad(true);
+      })
+      .catch(function (e) { out.className = "gh-test-result bad"; out.textContent = "✗ " + e.message; });
   });
 
   /* ---------- 시작 ---------- */
   window.addEventListener("beforeunload", function (e) {
-    if (state.dirty) { e.preventDefault(); e.returnValue = ""; }
+    if (state.dirty || Object.keys(state.pending).length) { e.preventDefault(); e.returnValue = ""; }
   });
 
   try {
     var draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
-    if (draft && Array.isArray(draft.items) && draft.items.length) {
+    if (draft && draft.dirty !== false && Array.isArray(draft.items) && draft.items.length) {
       state.items = draft.items.map(normalizeOrder);
-      msg("이전 작업(" + new Date(draft.savedAt).toLocaleString("ko-KR") + ")을 복원했습니다. 최신 저장소 파일로 시작하려면 [properties.json 불러오기]를 사용하세요.");
+      state.baseSha = draft.baseSha || null;
+      state.dirty = true;
+      msg("게시하지 않은 이전 작업(" + new Date(draft.savedAt).toLocaleString("ko-KR") + ")을 복원했습니다. 이어서 [홈페이지에 게시]하거나, 버리려면 [저장소에서 불러오기]를 누르세요. (사진은 다시 선택해야 할 수 있습니다)", false, true);
     }
   } catch (e) { /* 무시 */ }
   renderRows();
+  updateGhState();
+  if (ghToken() && !state.items.length) ghLoad(true);
 })();
