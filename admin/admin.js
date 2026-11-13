@@ -440,6 +440,14 @@
 
   /* ---------- GitHub 직접 게시 ---------- */
   var GH = CFG.github || {};
+  // 설정이 비어 있거나 이전 캐시면 현재 주소(<owner>.github.io/<repo>/admin/)에서 추정
+  (function () {
+    var m = /^([\w-]+)\.github\.io$/.exec(location.hostname);
+    if (!GH.owner && m) {
+      GH = { owner: m[1], repo: location.pathname.split("/")[1], branch: "main",
+        pagesUrl: location.origin + "/" + location.pathname.split("/")[1] + "/" };
+    }
+  })();
   var API = "https://api.github.com";
   var TOKEN_KEY = "doan-admin-gh-token";
   var DATA_PATH = CFG.data.url; // data/properties.json
