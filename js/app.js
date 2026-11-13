@@ -43,6 +43,12 @@
       li.textContent = pair[0] + ": " + pair[1];
       legal.appendChild(li);
     });
+    // 모바일에서는 길찾기·지도 버튼을 새 창 대신 현재 창에서 연다 (앱 전환·뒤로가기가 자연스럽도록)
+    var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+      (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+    if (isMobile) {
+      $$("[data-mobile-same-window]").forEach(function (a) { a.removeAttribute("target"); });
+    }
   }
 
   /* ---------- 데이터 ---------- */
