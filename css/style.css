@@ -93,8 +93,7 @@ h1, h2, h3, p { margin: 0; }
 /* ---------- 히어로 ---------- */
 .hero { background: linear-gradient(180deg, var(--navy-2), var(--navy)); color: #fff; }
 .hero-inner { display: grid; grid-template-columns: 1.1fr .9fr; gap: 32px; align-items: center; padding-top: 26px; padding-bottom: 26px; }
-.hero-badge { display: inline-block; background: rgba(46, 160, 80, .18); color: #4cd17a; border: 1px solid rgba(76, 209, 122, .35); padding: 6px 14px; border-radius: 999px; font-weight: 700; font-size: .92rem; }
-.hero h1 { font-size: clamp(1.9rem, 4.2vw, 2.9rem); font-weight: 900; letter-spacing: -0.03em; margin-top: 14px; }
+.hero h1 { font-size: clamp(1.9rem, 4.2vw, 2.9rem); font-weight: 900; letter-spacing: -0.03em; }
 .hero-sub { color: var(--gold); font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 800; margin-top: 6px; letter-spacing: -0.02em; }
 .hero-desc { color: #d6deea; margin-top: 12px; font-size: 1.05rem; max-width: 34em; }
 .hero-photo { margin: 0; justify-self: end; }
