@@ -80,6 +80,7 @@ h1, h2, h3, p { margin: 0; }
 .header-phone { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
 .header-phone .ico { width: 30px; height: 30px; color: var(--green); }
 .header-phone-label { font-weight: 700; font-size: 1.1rem; }
+.header-call { display: none; }
 .header-phone strong { color: var(--green); font-size: clamp(1.4rem, 2.8vw, 2.25rem); font-weight: 900; letter-spacing: -0.01em; }
 .header-specialties { font-weight: 600; color: var(--ink-2); font-size: .98rem; margin-top: 2px; }
 
@@ -227,7 +228,7 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
 .section-title::before { content: ""; display: inline-block; width: 6px; height: 1.1em; background: var(--green); border-radius: 3px; margin-right: 10px; vertical-align: -3px; }
 .section-lead { color: var(--ink-2); margin-top: 6px; font-size: 1.05rem; }
 .location { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
-.loc-list { display: grid; grid-template-columns: 60px 1fr; gap: 10px 14px; margin: 20px 0; font-size: 1.05rem; }
+.loc-list { display: grid; grid-template-columns: 60px 1fr; gap: 2px 14px; margin: 14px 0 16px; font-size: 1.05rem; line-height: 1.5; }
 .loc-list dt { font-weight: 800; color: var(--green); }
 .loc-list dd { margin: 0; }
 .loc-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -293,6 +294,11 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
   .brand-logo { width: 38px; height: 34px; }
   .brand-suffix { display: block; font-size: .7em; margin: 0; }
   .header-contact { display: none; }
+  .header-call {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 42px; height: 42px; border-radius: 50%; background: var(--green); color: #fff;
+  }
+  .header-call .ico { width: 22px; height: 22px; fill: currentColor; }
   .main-nav a { padding: 12px 14px; font-size: 1rem; }
   .main-nav a.is-active { padding-left: 18px; padding-right: 18px; }
   .hero-inner { padding-top: 24px; padding-bottom: 26px; }
