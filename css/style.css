@@ -201,7 +201,7 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
 .list-empty[hidden], .list-error[hidden] { display: none; }
 
 /* ---------- 추천매물 + 사무소 ---------- */
-.highlight-row { display: grid; grid-template-columns: minmax(0, 1.95fr) minmax(0, 1fr); gap: 18px; padding-bottom: 28px; }
+.highlight-row { display: grid; grid-template-columns: minmax(0, 1.95fr) minmax(0, 1fr); gap: 18px; padding-top: 18px; padding-bottom: 18px; }
 .featured { display: grid; grid-template-columns: 236px 1fr auto; gap: 22px; align-items: center; border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
 .featured[hidden] { display: none; }
 .featured img { width: 236px; height: 156px; object-fit: cover; border-radius: 10px; background: #eef1f3; }
@@ -283,8 +283,7 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
   .cards { overflow: visible; }
   .highlight-row { grid-template-columns: 1fr; }
   .hero-inner { grid-template-columns: 1fr; }
-  .hero-photo { justify-self: start; }
-  .hero-photo { max-width: 300px; }
+  .hero-photo { justify-self: start; max-width: 300px; }
       .location { grid-template-columns: 1fr; }
   .search-box { margin-left: 0; flex: 1 1 100%; }
   .filter-divider { display: none; }
@@ -323,6 +322,8 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
   .featured img { width: 100%; height: 190px; }
   .featured-side { flex-direction: column; align-items: stretch; gap: 12px; }
   .office-card { display: none; }
+  .hero-photo { justify-self: stretch; max-width: none; }
+  .highlight-row:has(.featured[hidden]) { display: none; }
     .detail { width: 100%; max-width: 100%; max-height: 100%; height: 100%; border-radius: 0; margin: 0; }
   .detail-table { grid-template-columns: 92px 1fr; }
 }
