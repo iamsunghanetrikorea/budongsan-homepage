@@ -1,5 +1,6 @@
-/* 지도 어댑터: NAVER Maps JS API v3 → (실패 시) OpenStreetMap/Leaflet
- * 공개 매물 중 도안동 경계 안 좌표만 마커로 표시한다. */
+/* 지도: OpenStreetMap 타일 + Leaflet (API 키·요금 없음)
+ * 공개 매물 중 도안동 경계 안 좌표만 마커로 표시한다.
+ * OSM 타일 이용정책: https://operations.osmfoundation.org/policies/tiles/ — 저작권 표시를 지우지 말 것 */
 (function (global) {
   "use strict";
 
@@ -95,88 +96,6 @@
     { lat: 35.2, lng: 128.8 }, { lat: 35.2, lng: 126.0 }
   ];
 
-  /* ---------- NAVER ---------- */
-  function initNaver(el) {
-    var clientId = CFG.map.naverClientId;
-    if (!clientId) return Promise.reject(new Error("NAVER Client ID 미설정"));
-    return new Promise(function (resolve, reject) {
-      var settled = false;
-      global.navermap_authFailure = function () {
-        if (!settled) { settled = true; reject(new Error("NAVER 지도 인증 실패 (Client ID·서비스 URL 확인)")); }
-        else if (state.handlers.onError) state.handlers.onError("네이버 지도 인증에 실패했습니다.");
-      };
-      var param = CFG.map.naverKeyParam || "ncpKeyId";
-      loadScript("https://oapi.map.naver.com/openapi/v3/maps.js?" + param + "=" + encodeURIComponent(clientId), 10000)
-        .then(function () {
-          if (settled) return;
-          var nv = global.naver && global.naver.maps;
-          if (!nv) throw new Error("NAVER 지도 객체 없음");
-          var b = paddedBounds();
-          var c = centroid();
-          var map = new nv.Map(el, {
-            center: new nv.LatLng(c.lat, c.lng),
-            zoom: CFG.searchArea.zoom || 15,
-            minZoom: 13,
-            maxBounds: new nv.LatLngBounds(new nv.LatLng(b.south, b.west), new nv.LatLng(b.north, b.east)),
-            zoomControl: true,
-            zoomControlOptions: { position: nv.Position.RIGHT_BOTTOM, style: nv.ZoomControlStyle.SMALL },
-            scaleControl: true,
-            mapDataControl: false,
-            logoControlOptions: { position: nv.Position.BOTTOM_LEFT }
-          });
-          var ring = ringLatLng().map(function (p) { return new nv.LatLng(p.lat, p.lng); });
-          new nv.Polygon({
-            map: map,
-            paths: [WORLD.map(function (p) { return new nv.LatLng(p.lat, p.lng); }), ring],
-            fillColor: "#1b2733", fillOpacity: 0.18, strokeOpacity: 0, clickable: false
-          });
-          new nv.Polygon({
-            map: map, paths: [ring],
-            fillColor: "#5b7cfa", fillOpacity: 0.1,
-            strokeColor: "#1f5fd6", strokeWeight: 3, strokeOpacity: 0.9, clickable: false
-          });
-          var bb = RE.boundaryBBox();
-          map.fitBounds(new nv.LatLngBounds(new nv.LatLng(bb.minLat, bb.minLng), new nv.LatLng(bb.maxLat, bb.maxLng)), { top: 20, right: 20, bottom: 20, left: 20 });
-          new nv.Marker({
-            map: map, position: new nv.LatLng(c.lat, c.lng), clickable: false, zIndex: 1,
-            icon: { content: '<div class="dong-label">' + RE.escapeHTML(CFG.searchArea.dong) + '</div>', anchor: new nv.Point(0, 0) }
-          });
-          state.popup = new nv.InfoWindow({
-            content: "", borderWidth: 0, backgroundColor: "transparent", disableAnchor: true,
-            pixelOffset: new nv.Point(0, -52), disableAutoPan: false
-          });
-          nv.Event.addListener(map, "click", function () { state.popup.close(); });
-          settled = true;
-          state.map = map;
-          state.provider = "naver";
-          resolve("naver");
-        })
-        .catch(function (err) { if (!settled) { settled = true; reject(err); } });
-    });
-  }
-
-  var naverAdapter = {
-    addMarker: function (p, el) {
-      var nv = global.naver.maps;
-      return new nv.Marker({
-        map: state.map,
-        position: new nv.LatLng(p.latitude, p.longitude),
-        icon: { content: el, anchor: new nv.Point(0, 0) },
-        zIndex: 100
-      });
-    },
-    removeMarker: function (m) { m.setMap(null); },
-    openPopup: function (m, html) { state.popup.setContent(html); state.popup.open(state.map, m); },
-    closePopup: function () { if (state.popup) state.popup.close(); },
-    panTo: function (p) { state.map.panTo(new global.naver.maps.LatLng(p.latitude, p.longitude)); },
-    setZIndex: function (m, z) { m.setZIndex(z); },
-    relayout: function () {
-      var el = state.map.getElement();
-      state.map.setSize(new global.naver.maps.Size(el.offsetWidth, el.offsetHeight));
-    },
-    credit: "지도: NAVER Maps"
-  };
-
   /* ---------- Leaflet / OSM ---------- */
   function initLeaflet(el) {
     var base = "https://unpkg.com/leaflet@" + LEAFLET_VER + "/dist/";
@@ -238,13 +157,12 @@
     credit: "지도: © OpenStreetMap contributors"
   };
 
-  function adapter() { return state.provider === "naver" ? naverAdapter : leafletAdapter; }
+  function adapter() { return leafletAdapter; }
 
   /* ---------- 공개 API ---------- */
   function init(el, handlers) {
     state.handlers = handlers || {};
-    var mode = (CFG.map && CFG.map.provider) || "auto";
-    var hasNaver = !!(CFG.map && CFG.map.naverClientId);
+    var mode = (CFG.map && CFG.map.provider) || "osm";
 
     // 팝업 안 '상세보기' 버튼 (이벤트 위임)
     el.addEventListener("click", function (e) {
@@ -253,13 +171,7 @@
     });
 
     if (mode === "none") return Promise.reject(new Error("지도 사용 안 함"));
-    if (mode === "leaflet" || (mode === "auto" && !hasNaver)) return initLeaflet(el);
-    return initNaver(el).catch(function (err) {
-      console.warn("[map] NAVER 지도 실패:", err.message);
-      if (mode === "naver") throw err;
-      el.innerHTML = "";
-      return initLeaflet(el);
-    });
+    return initLeaflet(el);
   }
 
   function setProperties(list) {

@@ -8,10 +8,10 @@ HTML/CSS/Vanilla JS + `data/properties.json` + GitHub Pages로 동작하며, 백
 ```text
 index.html                 공개 홈페이지
 css/style.css
-js/config.js               ★ 사무소 정보·지도 키·데이터 경로 설정
+js/config.js               ★ 사무소 정보·지도·데이터 경로 설정
 js/common.js               가격/면적 포맷, 도안동 경계 검증 (공개·관리자 공용)
 js/boundary.js             도안동 행정동 경계 좌표 (자동 생성)
-js/map.js                  지도 (NAVER → 실패 시 OpenStreetMap)
+js/map.js                  지도 (OpenStreetMap + Leaflet, API 키 불필요)
 js/app.js                  필터·정렬·목록·상세·지도 동기화
 data/properties.json       ★ 실제 게시 데이터 (관리자 화면에서 만들어 교체)
 data/properties.sample.json  로컬 미리보기용 예시 매물 (배포 제외)
@@ -60,17 +60,14 @@ GitHub Pages(공개 사이트)에서는 예시 매물을 쓰지 않고 `data/pro
 
 삭제·거래완료·가격 변경도 같은 절차입니다. 작업 중 내용은 브라우저에 임시 저장되므로 창을 닫아도 복원됩니다.
 
-## 네이버 지도 연결
+## 지도 (OpenStreetMap)
 
-지도 키가 없으면 자동으로 **OpenStreetMap(무료)** 지도로 표시됩니다. 네이버 지도를 쓰려면:
+지도는 **OpenStreetMap 타일 + Leaflet**을 사용합니다. 가입·API 키·요금이 없습니다. 네이버 지도 API는 사용하지 않습니다.
 
-1. [NAVER Cloud Platform](https://www.ncloud.com/) 가입 → **Maps** 상품 이용 신청 (요금·무료 제공량·결제수단 요건을 반드시 확인).
-2. Application 등록 → **Dynamic Map(Web)** 선택 → **Web 서비스 URL**에 다음을 등록:
-   - `https://<아이디>.github.io`
-   - `http://localhost:8000` (로컬 테스트용)
-3. 발급된 **Client ID**만 `js/config.js`의 `map.naverClientId`에 입력합니다. **Client Secret은 절대 넣지 마세요.**
-4. 네이버가 인증 파라미터명을 바꾼 경우 `map.naverKeyParam`(기본 `ncpKeyId`, 구버전은 `ncpClientId`)을 콘솔 안내에 맞게 추가합니다.
-5. 인증 실패·로드 실패 시 자동으로 OpenStreetMap으로 전환되고, 지도가 모두 실패해도 목록과 전화 버튼은 계속 동작합니다.
+- 지도 오른쪽 아래의 `© OpenStreetMap contributors` 저작권 표시는 지우면 안 됩니다.
+- OSM 공식 타일 서버는 기부로 운영됩니다. [타일 이용 정책](https://operations.osmfoundation.org/policies/tiles/)을 지켜 주세요. 방문자가 크게 늘면 무료 한도가 있는 다른 타일 서비스로 `js/map.js`의 타일 주소만 바꾸면 됩니다.
+- 지도가 불러와지지 않아도 매물 목록과 전화 버튼은 계속 동작합니다.
+- '오시는길'의 **네이버 지도에서 길찾기** 버튼은 단순 링크라 API·키와 무관합니다.
 
 ## 도안동 경계 데이터
 
@@ -85,8 +82,7 @@ GitHub Pages(공개 사이트)에서는 예시 매물을 쓰지 않고 `data/pro
 |---|---|
 | `office.*` | 상호·전화·주소. 화면 곳곳에 자동 반영 |
 | `office.registrationNumber`, `representative` | **법정 표시정보** — 등록증 등 실제 증빙 확인 후 입력. 입력하면 푸터에 표시 |
-| `map.provider` | `auto`(기본) / `naver` / `leaflet` / `none` |
-| `map.naverClientId` | 네이버 지도 Client ID (공개 식별자) |
+| `map.provider` | `osm`(기본, OpenStreetMap) / `none`(지도 끔) |
 | `data.demoMode` | `auto`면 localhost에서만 예시 매물 표시 |
 
 ## 데이터 형식 (`data/properties.json`)
@@ -121,4 +117,4 @@ GitHub Pages(공개 사이트)에서는 예시 매물을 쓰지 않고 `data/pro
 - 공인중개사법상 중개대상물 표시·광고 의무사항(사무소 명칭·소재지·연락처·등록번호, 개업공인중개사 성명, 매물 소재지·면적·가격·종류·거래형태 등)을 확인하고 누락 항목은 필드를 추가하세요.
 - 거래완료 매물은 즉시 `거래완료`로 바꿔 게시하세요 (허위·미끼 매물 방지).
 - 정확한 동·호수, 임차인 정보, 사진 속 차량번호·얼굴은 공개하지 마세요.
-- 네이버 지도 약관·사용량, OpenStreetMap 타일 이용 정책을 준수하세요.
+- OpenStreetMap 저작권 표시와 타일 이용 정책을 준수하세요.

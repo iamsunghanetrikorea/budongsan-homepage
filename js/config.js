@@ -26,14 +26,9 @@ window.SITE_CONFIG = {
   },
 
   map: {
-    // "auto"  : naverClientId가 있으면 네이버 지도, 없으면 OpenStreetMap(Leaflet)
-    // "naver" : 네이버 지도만 사용 / "leaflet" : OSM만 사용 / "none" : 지도 끔
-    provider: "auto",
-    // NAVER Cloud Platform > Maps > Application 의 Client ID (공개 식별자).
-    // Client Secret 은 절대 여기에 넣지 마세요.
-    naverClientId: "",
-    // 인증 파라미터명 (현행 NCP Maps: "ncpKeyId", 구버전: "ncpClientId")
-    naverKeyParam: "ncpKeyId"
+    // "osm"  : OpenStreetMap 지도 (무료, API 키 불필요)
+    // "none" : 지도 끔 (목록·전화 상담만 표시)
+    provider: "osm"
   },
 
   data: {
