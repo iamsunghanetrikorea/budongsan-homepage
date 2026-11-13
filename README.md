@@ -18,7 +18,7 @@ data/properties.sample.json  로컬 미리보기용 예시 매물 (배포 제외
 data/doan-dong-boundary.geojson  경계 원본 (출처 포함)
 assets/properties/         매물 사진 (WebP 권장)
 assets/placeholders/       사진이 없을 때 쓰는 기본 그림
-admin/                     로컬 전용 관리자 화면 (배포 제외)
+admin/                     관리자 화면 (https://iamsunghanetrikorea.github.io/budongsan-homepage/admin/)
 .github/workflows/pages.yml  공개 파일만 골라 GitHub Pages에 배포
 ```
 
@@ -41,7 +41,7 @@ GitHub Pages(공개 사이트)에서는 예시 매물을 쓰지 않고 `data/pro
 3. github.com에서 저장소 → **Settings → Pages → Build and deployment → Source: GitHub Actions** 선택.
 4. 잠시 후 **Actions** 탭에서 배포가 끝나면 `https://<아이디>.github.io/<저장소명>/` 주소가 생깁니다.
 
-> 배포 워크플로가 `index.html, css, js, data, assets`만 복사하므로 `admin/`, PRD, 카카오톡 원본 자료는 공개 사이트에 올라가지 않습니다.
+> 배포 워크플로가 `index.html, css, js, data, assets, admin`만 복사하므로 PRD, 디자인 원본, 예시 데이터는 공개 사이트에 올라가지 않습니다. 관리자 화면은 누구나 열 수 있지만 비밀 정보가 없고, 게시는 GitHub 토큰을 저장한 기기에서만 됩니다.
 > 단, **공개 저장소의 파일 자체는 누구나 볼 수 있습니다.** 고객 개인정보·비밀 키는 절대 저장소에 넣지 마세요. (`.gitignore`가 `KakaoTalk_*` 파일을 제외합니다.)
 
 ## 매물 등록·수정 — 관리자 화면에서 바로 게시
@@ -49,8 +49,8 @@ GitHub Pages(공개 사이트)에서는 예시 매물을 쓰지 않고 `data/pro
 관리자 화면(`admin/index.html`)에서 입력하고 **[홈페이지에 게시]** 버튼을 누르면 매물 데이터와 사진이 GitHub에 커밋되고, 1~3분 뒤 홈페이지에 반영됩니다. GitHub Desktop이나 파일 교체가 필요 없습니다.
 
 ### 처음 한 번
-1. 이 저장소를 관리자 PC에 받아 둡니다 (GitHub Desktop의 Clone, 또는 github.com의 `Code → Download ZIP`). 관리자 화면 파일을 열기 위해서만 필요합니다.
-2. `admin/index.html`을 크롬으로 열고 **GitHub 미연결** 표시(또는 더보기 → GitHub 연결 설정)를 누릅니다.
+1. 관리자 화면 https://iamsunghanetrikorea.github.io/budongsan-homepage/admin/ 을 크롬으로 열고 (북마크 권장)
+2. 오른쪽 위 **GitHub 미연결** 표시(또는 더보기 → GitHub 연결 설정)를 누릅니다.
 3. 안내에 따라 **Fine-grained 토큰**을 만듭니다.
    - Repository access: **Only select repositories → budongsan-homepage**
    - Permissions: **Contents: Read and write**, **Actions: Read-only**(배포 상태 표시용)
