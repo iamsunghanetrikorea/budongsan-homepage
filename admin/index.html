@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>매물 관리자 (로컬 전용) | 도안IPARK 파인 부동산</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <header class="a-header">
+    <div>
+      <h1>매물 관리자 <span class="badge">로컬 전용</span></h1>
+      <p>도안IPARK파인공인중개사사무소 · 이 화면은 GitHub Pages에 배포되지 않습니다.</p>
+    </div>
+    <div class="a-header-actions">
+      <label class="btn btn-line">
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+        properties.json 불러오기
+      </label>
+      <button type="button" class="btn btn-line" id="load-repo" title="로컬 서버로 열었을 때 저장소의 data/properties.json을 바로 읽습니다">저장소 파일 읽기</button>
+      <button type="button" class="btn btn-green" id="export">게시용 JSON 다운로드</button>
+    </div>
+  </header>
+
+  <div class="a-msg" id="msg" role="status" aria-live="polite"></div>
+
+  <main class="a-main">
+    <!-- 목록 -->
+    <section class="panel" aria-labelledby="list-h">
+      <div class="panel-head">
+        <h2 id="list-h">매물 목록 <span class="muted" id="stats"></span></h2>
+        <div class="row">
+          <select id="list-filter" aria-label="상태 필터">
+            <option value="">전체 상태</option>
+            <option value="published">공개</option>
+            <option value="hidden">숨김</option>
+            <option value="sold">거래완료</option>
+          </select>
+          <button type="button" class="btn btn-green" id="new">+ 새 매물</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="a-table">
+          <thead><tr><th>번호</th><th>상태</th><th>거래</th><th>유형</th><th>매물명</th><th>가격</th><th>지도</th><th>확인일</th><th></th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="rows-empty" hidden>매물이 없습니다. 기존 properties.json을 불러오거나 새 매물을 추가하세요.</p>
+    </section>
+
+    <!-- 편집 폼 -->
+    <section class="panel" id="editor" aria-labelledby="edit-h" hidden>
+      <div class="panel-head">
+        <h2 id="edit-h">매물 편집 <span class="muted" id="edit-id"></span></h2>
+        <button type="button" class="btn btn-line" id="cancel">닫기</button>
+      </div>
+      <form id="form" novalidate>
+        <div class="grid">
+          <label class="span2">매물명 *<input name="title" required maxlength="40" placeholder="예: 도안IPARK 1단지 84㎡"></label>
+          <label>상태 *
+            <select name="status" required>
+              <option value="hidden">숨김</option>
+              <option value="published">공개</option>
+              <option value="sold">거래완료</option>
+            </select>
+          </label>
+          <label>거래유형 *
+            <select name="transaction" required>
+              <option value="sale">매매</option>
+              <option value="jeonse">전세</option>
+              <option value="monthly">월세</option>
+            </select>
+          </label>
+          <label>매물종류 *
+            <select name="propertyType" required>
+              <option value="apartment">아파트</option>
+              <option value="officetel">오피스텔</option>
+              <option value="house">주택·빌라</option>
+              <option value="commercial">상가</option>
+              <option value="land">토지</option>
+              <option value="etc">기타</option>
+            </select>
+          </label>
+          <label class="chk"><input type="checkbox" name="featured"> 추천매물로 노출</label>
+
+          <fieldset class="span3 money">
+            <legend>가격 (원 단위 · 만원 입력 도우미)</legend>
+            <label data-tx="sale">매매가 *<input name="priceKRW" inputmode="numeric" placeholder="750000000"><small class="hint" data-hint="priceKRW"></small></label>
+            <label data-tx="jeonse monthly">보증금 *<input name="depositKRW" inputmode="numeric" placeholder="420000000"><small class="hint" data-hint="depositKRW"></small></label>
+            <label data-tx="monthly">월세 *<input name="monthlyRentKRW" inputmode="numeric" placeholder="800000"><small class="hint" data-hint="monthlyRentKRW"></small></label>
+            <label>관리비(월)<input name="maintenanceFeeKRW" inputmode="numeric" placeholder="200000"><small class="hint" data-hint="maintenanceFeeKRW"></small></label>
+          </fieldset>
+
+          <label>전용면적(㎡) *<input name="areaM2" inputmode="decimal" placeholder="59.9"></label>
+          <label>공급면적(㎡)<input name="supplyAreaM2" inputmode="decimal" placeholder="84.9"></label>
+          <label>해당층<input name="floor" placeholder="12 또는 저/중/고"></label>
+          <label>총층<input name="totalFloors" inputmode="numeric" placeholder="25"></label>
+          <label>방 수<input name="rooms" inputmode="numeric"></label>
+          <label>욕실 수<input name="baths" inputmode="numeric"></label>
+          <label>입주 가능일<input name="moveInDate" placeholder="즉시 입주 / 2027-01 협의"></label>
+          <label>최종 확인일 *<input type="date" name="lastCheckedAt"></label>
+
+          <label class="span3">특징 (줄바꿈으로 구분, 최대 3개 노출)<textarea name="highlights" rows="3" placeholder="도안신도시 핵심 입지&#10;학군·교통·생활편의 우수"></textarea></label>
+          <label class="span3">설명<textarea name="description" rows="4" maxlength="1000" placeholder="동·호수, 임차인 정보, 개인 연락처는 적지 마세요."></textarea></label>
+
+          <fieldset class="span3">
+            <legend>위치 (도안동 경계 안만 허용) — 지도를 클릭해 좌표를 지정하세요</legend>
+            <div class="row">
+              <label>위도<input name="latitude" inputmode="decimal" placeholder="36.3175"></label>
+              <label>경도<input name="longitude" inputmode="decimal" placeholder="127.3486"></label>
+              <span class="geo-state" id="geo-state"></span>
+            </div>
+            <div id="pick-map" class="pick-map"></div>
+            <small class="hint">공개 정밀도: 정확한 건물 대신 단지 입구·블록 중심 정도로 지정하는 것을 권장합니다.</small>
+          </fieldset>
+
+          <fieldset class="span3">
+            <legend>사진</legend>
+            <label>사진 경로 (한 줄에 하나, assets/properties/ 아래)<textarea name="images" rows="3" placeholder="assets/properties/DA-0001-1.webp"></textarea></label>
+            <div class="row">
+              <label class="btn btn-line">
+                <input type="file" id="photo-input" accept="image/*" multiple hidden>
+                사진 선택 → WebP 최적화 다운로드
+              </label>
+              <small class="hint">긴 변 1600px · WebP로 변환해 다운로드하고 경로를 자동 추가합니다. 다운로드한 파일을 저장소의 <code>assets/properties/</code> 폴더에 복사하세요. 사진 속 차량번호·얼굴·우편물 등 개인정보를 확인하세요.</small>
+            </div>
+            <div class="thumbs" id="thumbs"></div>
+          </fieldset>
+        </div>
+
+        <ul class="errors" id="errors" aria-live="assertive"></ul>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-green">검증 후 저장</button>
+          <button type="button" class="btn btn-line danger" id="delete">삭제</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel help">
+      <h2>게시 절차</h2>
+      <ol>
+        <li>GitHub Desktop으로 저장소를 최신 상태로 가져옵니다 (<b>Fetch / Pull</b>).</li>
+        <li>[properties.json 불러오기]로 저장소의 <code>data/properties.json</code>을 엽니다.</li>
+        <li>매물을 추가·수정·숨김·거래완료 처리합니다. (작업 내용은 이 브라우저에 임시 저장됩니다)</li>
+        <li>[게시용 JSON 다운로드] → 받은 파일로 저장소의 <code>data/properties.json</code>을 교체하고, 사진은 <code>assets/properties/</code>에 복사합니다.</li>
+        <li>GitHub Desktop에서 변경 확인 → <b>Commit to main</b> → <b>Push origin</b>.</li>
+        <li>1~3분 후 홈페이지를 새로고침하면 반영됩니다.</li>
+      </ol>
+    </section>
+  </main>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/boundary.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

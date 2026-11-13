@@ -1,0 +1,42 @@
+# GitHub Pages 배포: 공개용 파일만 _site 로 복사해서 배포합니다.
+# admin/ (관리자 화면), PRD·원본 이미지 등은 배포 대상에서 제외됩니다.
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 공개 파일만 _site 로 복사
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp -r css js data assets _site/
+          rm -f _site/data/properties.sample.json
+          touch _site/.nojekyll
+          echo "배포 파일 목록:" && find _site -type f | sort
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

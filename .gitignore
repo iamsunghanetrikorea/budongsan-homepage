@@ -1,0 +1,7 @@
+.DS_Store
+Thumbs.db
+# 원본 사진/개인 자료는 저장소에 올리지 않습니다
+originals/
+*.psd
+# 카카오톡 원본 자료
+KakaoTalk_*

@@ -1,0 +1,33 @@
+[
+  {
+    "id": "DA-0001",
+    "depositKRW": null,
+    "monthlyRentKRW": null,
+    "priceKRW": 750000000,
+    "maintenanceFeeKRW": 230000,
+    "supplyAreaM2": 84.9,
+    "totalFloors": 25,
+    "rooms": 3,
+    "baths": 2,
+    "moveInDate": "2027-01 이후 협의",
+    "highlights": [
+      "도안신도시 핵심 입지",
+      "학군·교통·생활편의 우수",
+      "도안호수공원 인접"
+    ],
+    "images": [],
+    "featured": true,
+    "addressDong": "도안동",
+    "title": "도안IPARK 1단지",
+    "transaction": "sale",
+    "propertyType": "apartment",
+    "areaM2": 59.9,
+    "floor": "15",
+    "description": "남향 위주 판상형 구조, 채광 우수. 단지 내 커뮤니티 시설 이용 가능. (예시 매물)",
+    "updatedAt": "2026-11-12",
+    "latitude": 36.313922,
+    "longitude": 127.349629,
+    "status": "hidden",
+    "lastCheckedAt": "2026-11-12"
+  }
+]
