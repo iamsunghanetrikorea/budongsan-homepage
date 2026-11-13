@@ -228,7 +228,7 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
 .section-title::before { content: ""; display: inline-block; width: 6px; height: 1.1em; background: var(--green); border-radius: 3px; margin-right: 10px; vertical-align: -3px; }
 .section-lead { color: var(--ink-2); margin-top: 6px; font-size: 1.05rem; }
 .location { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
-.loc-list { display: grid; grid-template-columns: 60px 1fr; gap: 2px 14px; margin: 14px 0 16px; font-size: 1.05rem; line-height: 1.5; }
+.loc-list { display: grid; grid-template-columns: 60px 1fr; gap: 2px 14px; margin: 4px 0 16px; font-size: 1.05rem; line-height: 1.5; }
 .loc-list dt { font-weight: 800; color: var(--green); }
 .loc-list dd { margin: 0; }
 .loc-actions { display: flex; gap: 10px; flex-wrap: wrap; }
