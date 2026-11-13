@@ -60,11 +60,8 @@ h1, h2, h3, p { margin: 0; }
 .btn:active { transform: translateY(1px); }
 .btn-green { background: var(--green); color: #fff; }
 .btn-green:hover { background: var(--green-dark); }
-.btn-orange { background: var(--orange); color: #fff; border-radius: 999px; }
-.btn-orange:hover { background: #c94d07; }
 .btn-line { background: #fff; border-color: #c9d0d6; color: var(--ink); }
 .btn-line:hover { border-color: var(--green); color: var(--green); }
-.btn-block { width: 100%; }
 .btn-lg { min-height: 52px; font-size: 1.15rem; }
 
 /* ---------- 헤더 ---------- */
@@ -219,14 +216,11 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
 .section-title { font-size: 1.7rem; font-weight: 900; letter-spacing: -0.02em; }
 .section-title::before { content: ""; display: inline-block; width: 6px; height: 1.1em; background: var(--green); border-radius: 3px; margin-right: 10px; vertical-align: -3px; }
 .section-lead { color: var(--ink-2); margin-top: 6px; font-size: 1.05rem; }
-.location { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
+.location { display: block; }
 .loc-list { display: grid; grid-template-columns: 60px 1fr; gap: 2px 14px; margin: 4px 0 16px; font-size: 1.05rem; line-height: 1.5; }
 .loc-list dt { font-weight: 800; color: var(--green); }
 .loc-list dd { margin: 0; }
 .loc-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-.loc-card { background: var(--navy); color: #fff; border-radius: var(--radius); padding: 24px; display: grid; gap: 10px; }
-.loc-card-title { font-size: 1.3rem; font-weight: 900; }
-.loc-card p:not(.loc-card-title) { color: #cfd8e3; }
 
 /* ---------- 푸터 ---------- */
 .site-footer { background: #1d2329; color: #c3cad1; padding: 32px 0 40px; font-size: .92rem; }
@@ -276,7 +270,6 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
   .highlight-row { grid-template-columns: 1fr; }
   .hero-inner { grid-template-columns: 1fr; }
   .hero-photo { justify-self: start; max-width: 300px; }
-      .location { grid-template-columns: 1fr; }
   .search-box { margin-left: 0; flex: 1 1 100%; }
   .filter-divider { display: none; }
 }
