@@ -97,7 +97,8 @@ h1, h2, h3, p { margin: 0; }
 .hero h1 { font-size: clamp(1.9rem, 4.2vw, 2.9rem); font-weight: 900; letter-spacing: -0.03em; margin-top: 14px; }
 .hero-sub { color: var(--gold); font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 800; margin-top: 6px; letter-spacing: -0.02em; }
 .hero-desc { color: #d6deea; margin-top: 12px; font-size: 1.05rem; max-width: 34em; }
-.hero-art svg { width: 100%; height: auto; max-height: 220px; display: block; }
+.hero-photo { margin: 0; justify-self: end; }
+.hero-photo img { display: block; width: auto; height: auto; max-width: 100%; max-height: 340px; border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,.35); }
 
 
 /* ---------- 필터 ---------- */
@@ -282,7 +283,8 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
   .cards { overflow: visible; }
   .highlight-row { grid-template-columns: 1fr; }
   .hero-inner { grid-template-columns: 1fr; }
-  .hero-art { display: none; }
+  .hero-photo { justify-self: center; }
+  .hero-photo img { max-height: 300px; }
       .location { grid-template-columns: 1fr; }
   .search-box { margin-left: 0; flex: 1 1 100%; }
   .filter-divider { display: none; }
