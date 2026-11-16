@@ -68,7 +68,8 @@
     var img = (p.images && p.images[0]) || RE.placeholderImage(p.propertyType);
     var meta = [RE.locText(p), RE.areaText(p)].filter(Boolean).join(" · ");
     return '<div class="map-popup">' +
-      '<img src="' + RE.escapeHTML(img) + '" alt="" loading="lazy" onerror="this.src=\'' + RE.placeholderImage(p.propertyType) + '\'">' +
+      '<div class="map-popup-img"><img src="' + RE.escapeHTML(img) + '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'' + RE.placeholderImage(p.propertyType) + '\'">' +
+      (RE.isSamplePhoto(img) ? '<span class="sample-badge">샘플 사진</span>' : "") + '</div>' +
       '<div class="map-popup-body">' +
       '<span class="tag tag--' + p.transaction + '">' + RE.TRANSACTIONS[p.transaction].label + '</span> ' +
       '<span class="muted">' + RE.escapeHTML(RE.PROPERTY_TYPES[p.propertyType] || "") + '</span>' +

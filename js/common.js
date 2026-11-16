@@ -144,9 +144,17 @@
     return /^assets\/properties\/[A-Za-z0-9_\-\/]+\.(webp|jpe?g|png)$/i.test(path) && path.indexOf("..") === -1;
   }
 
+  // 사진이 없는 매물에 보여줄 대체 이미지 (아파트는 샘플 사진)
+  var SAMPLE_PHOTOS = { apartment: "assets/placeholders/apartment-sample.webp" };
   function placeholderImage(type) {
+    if (SAMPLE_PHOTOS[type]) return SAMPLE_PHOTOS[type];
     var known = ["apartment", "officetel", "house", "commercial", "land"];
     return "assets/placeholders/" + (known.indexOf(type) >= 0 ? type : "etc") + ".svg";
+  }
+
+  /** 실제 매물 사진이 아닌 샘플 사진인지 ("샘플 사진" 표시용) */
+  function isSamplePhoto(src) {
+    return /assets\/placeholders\/[^/]+-sample\./.test(String(src || ""));
   }
 
   global.RE = {
@@ -167,6 +175,7 @@
     boundaryRing: boundaryRing,
     escapeHTML: escapeHTML,
     isValidImagePath: isValidImagePath,
-    placeholderImage: placeholderImage
+    placeholderImage: placeholderImage,
+    isSamplePhoto: isSamplePhoto
   };
 })(window);

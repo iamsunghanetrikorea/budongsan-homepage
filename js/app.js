@@ -146,8 +146,10 @@
   }
 
   function imgTag(src, cls, type, alt) {
-    return '<img class="' + cls + '" src="' + RE.escapeHTML(src) + '" alt="' + RE.escapeHTML(alt || "") + '" loading="lazy" ' +
+    var img = '<img class="' + cls + '" src="' + RE.escapeHTML(src) + '" alt="' + RE.escapeHTML(alt || "") + '" loading="lazy" ' +
       'onerror="this.onerror=null;this.src=\'' + RE.placeholderImage(type) + '\'">';
+    // 샘플 사진이면 실제 매물 사진으로 오해하지 않도록 표시
+    return RE.isSamplePhoto(src) ? '<span class="sample-wrap">' + img + '<span class="sample-badge">샘플 사진</span></span>' : img;
   }
 
   function metaParts(p) {
