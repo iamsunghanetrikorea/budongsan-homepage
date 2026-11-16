@@ -265,19 +265,16 @@
       state.popup.setPosition(m.getPosition());
       state.popup.setMap(state.map);
       // 팝업이 지도 밖으로 잘리지 않게 화면을 이동 (카카오 CustomOverlay는 자동 이동이 없음)
+      // 실제 화면상의 팝업 위치와 지도 영역을 비교해 필요한 만큼 이동
       setTimeout(function () {
-        var mapEl = state.el;
-        var pt = state.map.getProjection().containerPointFromCoords(m.getPosition());
-        // 카카오가 오버레이를 늦게 그리면 크기가 0일 수 있어 기본값 사용
-        var h = (box.offsetHeight || 270) + FLAG_H + 4, w = (box.offsetWidth || 250) / 2, pad = 12;
-        var W = mapEl ? mapEl.offsetWidth : 0;
-        var dy = pt.y - h - pad < 0 ? pt.y - h - pad : 0;
-        var dx = 0;
-        if (W) {
-          if (pt.x - w - pad < 0) dx = pt.x - w - pad;
-          else if (pt.x + w + pad > W) dx = pt.x + w + pad - W;
-        }
-        if (dx || dy) state.map.panBy(dx, dy);
+        if (!box.isConnected || !state.el) return;
+        var b = box.getBoundingClientRect(), mr = state.el.getBoundingClientRect(), pad = 12;
+        var dx = 0, dy = 0;
+        if (b.top < mr.top + pad) dy = b.top - mr.top - pad;
+        else if (b.bottom > mr.bottom - pad) dy = Math.min(b.bottom - mr.bottom + pad, b.top - mr.top - pad);
+        if (b.left < mr.left + pad) dx = b.left - mr.left - pad;
+        else if (b.right > mr.right - pad) dx = b.right - mr.right + pad;
+        if (dx || dy) state.map.panBy(Math.round(dx), Math.round(dy));
       }, 80);
     },
     closePopup: function () { if (state.popup) state.popup.setMap(null); },
