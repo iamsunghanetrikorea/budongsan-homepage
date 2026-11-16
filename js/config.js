@@ -26,9 +26,12 @@ window.SITE_CONFIG = {
   },
 
   map: {
-    // "auto"  : naverClientId가 있으면 네이버 지도, 없거나 인증 실패 시 OpenStreetMap
-    // "naver" : 네이버 지도만 사용 / "osm" : OpenStreetMap만 사용 / "none" : 지도 끔
+    // "auto"  : 키가 있는 순서대로 카카오맵 → 네이버 지도 → (없거나 실패 시) OpenStreetMap
+    // "kakao" : 카카오맵만 / "naver" : 네이버 지도만 / "osm" : OpenStreetMap만 / "none" : 지도 끔
     provider: "auto",
+    // ▼ 카카오 디벨로퍼스 > 내 애플리케이션 > 앱 키 의 "JavaScript 키"를 따옴표 안에 넣으면 카카오맵으로 전환됩니다.
+    //   (공개용 키. REST API·Admin 키는 절대 넣지 마세요. 플랫폼 > Web 에 https://iamsunghanetrikorea.github.io 등록 필요)
+    kakaoAppKey: "",
     // ▼ 네이버 클라우드 플랫폼 > Maps > Application 의 Client ID 를 따옴표 안에 넣으면 네이버 지도로 전환됩니다.
     //   (공개 식별자. Client Secret 은 절대 넣지 마세요. 서비스 URL에 https://iamsunghanetrikorea.github.io 등록 필요)
     naverClientId: "",

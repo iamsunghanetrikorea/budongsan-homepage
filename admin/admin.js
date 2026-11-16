@@ -346,7 +346,7 @@
     el.addEventListener("input", updateMoneyHints);
   });
 
-  /* ---------- 좌표 선택 지도 (네이버 지도 → 실패·미설정 시 OpenStreetMap/Leaflet) ---------- */
+  /* ---------- 좌표 선택 지도 (카카오맵 → 네이버 지도 → 실패·미설정 시 OpenStreetMap/Leaflet) ---------- */
   // pick: { setMarker(lat,lng), clearMarker(), setView(lat,lng,zoom), relayout() }
   var pick = null, pickLoading = false;
 
@@ -425,6 +425,41 @@
     });
   }
 
+  function initKakaoPick(el) {
+    var key = (CFG.map || {}).kakaoAppKey;
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      var timer = setTimeout(function () { reject(new Error("카카오맵 로딩 시간 초과")); }, 10000);
+      s.src = "https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=" + encodeURIComponent(key);
+      s.async = true;
+      s.onerror = function () { clearTimeout(timer); reject(new Error("카카오맵 스크립트 로드 실패 (JavaScript 키·도메인 확인)")); };
+      s.onload = function () {
+        if (!window.kakao || !window.kakao.maps || !window.kakao.maps.load) { clearTimeout(timer); reject(new Error("카카오맵 인증 실패 (JavaScript 키·도메인 확인)")); return; }
+        window.kakao.maps.load(function () { clearTimeout(timer); resolve(window.kakao.maps); });
+      };
+      document.head.appendChild(s);
+    }).then(function (km) {
+      var c = CFG.searchArea.center, marker = null;
+      var m = new km.Map(el, { center: new km.LatLng(c.lat, c.lng), level: 5 });
+      m.setMaxLevel(7);
+      m.addControl(new km.ZoomControl(), km.ControlPosition.RIGHT);
+      var ring = RE.boundaryRing().map(function (pt) { return new km.LatLng(pt[1], pt[0]); });
+      new km.Polygon({ map: m, path: ring, strokeWeight: 3, strokeColor: "#1f5fd6", strokeOpacity: 0.9, fillColor: "#1f5fd6", fillOpacity: 0.08 });
+      var bb = RE.boundaryBBox();
+      m.setBounds(new km.LatLngBounds(new km.LatLng(bb.minLat, bb.minLng), new km.LatLng(bb.maxLat, bb.maxLng)), 10, 10, 10, 10);
+      km.event.addListener(m, "click", function (e) { setPicked(e.latLng.getLat(), e.latLng.getLng()); });
+      return {
+        setMarker: function (lat, lng) {
+          var pos = new km.LatLng(lat, lng);
+          if (!marker) marker = new km.Marker({ map: m, position: pos }); else marker.setPosition(pos);
+        },
+        clearMarker: function () { if (marker) { marker.setMap(null); marker = null; } },
+        setView: function (lat, lng, z) { m.setLevel(Math.max(1, 20 - z)); m.setCenter(new km.LatLng(lat, lng)); },
+        relayout: function () { m.relayout(); }
+      };
+    });
+  }
+
   function ensureMap() {
     if (pick) { setTimeout(pick.relayout, 50); return; }
     if (pickLoading) return;
@@ -433,13 +468,25 @@
     var mc = CFG.map || {};
     var mode = mc.provider || "auto";
     if (mode === "none") { el.textContent = "지도 사용 안 함 — 위도·경도를 직접 입력하세요."; return; }
-    var useNaver = mc.naverClientId && (mode === "auto" || mode === "naver");
-    var p = useNaver ? initNaverPick(el).catch(function (err) {
-      console.warn("[map]", err.message);
-      el.innerHTML = "";
-      msg(err.message + " — OpenStreetMap 지도로 대신 표시합니다.", true);
+    // 우선순위: 카카오 → 네이버 → OpenStreetMap (실패하면 다음 순서로)
+    var order = [];
+    if (mc.kakaoAppKey && (mode === "auto" || mode === "kakao")) order.push(initKakaoPick);
+    if (mc.naverClientId && (mode === "auto" || mode === "naver")) order.push(initNaverPick);
+    var p = Promise.reject(new Error("start"));
+    order.forEach(function (fn, i) {
+      p = p.catch(function (err) {
+        if (i > 0) { console.warn("[map]", err.message); el.innerHTML = ""; }
+        return fn(el);
+      });
+    });
+    p = p.catch(function (err) {
+      if (order.length) {
+        console.warn("[map]", err.message);
+        el.innerHTML = "";
+        msg(err.message + " — OpenStreetMap 지도로 대신 표시합니다.", true);
+      }
       return initLeafletPick(el);
-    }) : initLeafletPick(el);
+    });
     p.then(function (api) {
       pick = api;
       syncMarker(true);

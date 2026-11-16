@@ -1,4 +1,4 @@
-/* 지도 어댑터: NAVER Maps JS API v3 → (실패 시) OpenStreetMap/Leaflet
+/* 지도 어댑터: 카카오맵 → 네이버 지도 → (실패·미설정 시) OpenStreetMap/Leaflet
  * 공개 매물 중 도안동 경계 안 좌표만 마커로 표시한다. */
 (function (global) {
   "use strict";
@@ -177,6 +177,94 @@
     credit: "지도: NAVER Maps"
   };
 
+  /* ---------- KAKAO ---------- */
+  // 카카오 지도 레벨(1=가장 확대) ↔ 일반 줌 레벨 근사 변환
+  function kakaoLevel(zoom) { return Math.max(1, Math.min(14, 20 - zoom)); }
+
+  function loadKakaoSDK() {
+    var key = CFG.map.kakaoAppKey;
+    if (!key) return Promise.reject(new Error("KAKAO JavaScript 키 미설정"));
+    if (global.kakao && global.kakao.maps && global.kakao.maps.Map) return Promise.resolve(global.kakao.maps);
+    return loadScript("https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=" + encodeURIComponent(key), 10000)
+      .then(function () {
+        return new Promise(function (resolve, reject) {
+          if (!global.kakao || !global.kakao.maps || !global.kakao.maps.load) { reject(new Error("KAKAO 지도 인증 실패 (JavaScript 키·도메인 확인)")); return; }
+          var timer = setTimeout(function () { reject(new Error("KAKAO 지도 로딩 시간 초과")); }, 10000);
+          global.kakao.maps.load(function () { clearTimeout(timer); resolve(global.kakao.maps); });
+        });
+      });
+  }
+
+  function initKakao(el) {
+    return loadKakaoSDK().then(function (km) {
+      var c = centroid();
+      var map = new km.Map(el, { center: new km.LatLng(c.lat, c.lng), level: kakaoLevel(CFG.searchArea.zoom || 15) });
+      map.setMaxLevel(kakaoLevel(13));
+      map.addControl(new km.ZoomControl(), km.ControlPosition.RIGHT);
+      // 도안동 주변 밖으로 벗어나면 되돌림
+      var b = paddedBounds();
+      var limit = new km.LatLngBounds(new km.LatLng(b.south, b.west), new km.LatLng(b.north, b.east));
+      km.event.addListener(map, "dragend", function () {
+        var ctr = map.getCenter();
+        if (limit.contain(ctr)) return;
+        var lat = Math.min(Math.max(ctr.getLat(), b.south), b.north);
+        var lng = Math.min(Math.max(ctr.getLng(), b.west), b.east);
+        map.panTo(new km.LatLng(lat, lng));
+      });
+      var ring = ringLatLng().map(function (p) { return new km.LatLng(p.lat, p.lng); });
+      new km.Polygon({
+        map: map,
+        path: [WORLD.map(function (p) { return new km.LatLng(p.lat, p.lng); }), ring],
+        strokeWeight: 0, strokeOpacity: 0, fillColor: "#1b2733", fillOpacity: 0.18
+      });
+      new km.Polygon({
+        map: map, path: ring,
+        strokeWeight: 3, strokeColor: "#1f5fd6", strokeOpacity: 0.9, fillColor: "#5b7cfa", fillOpacity: 0.1
+      });
+      var bb = RE.boundaryBBox();
+      map.setBounds(new km.LatLngBounds(new km.LatLng(bb.minLat, bb.minLng), new km.LatLng(bb.maxLat, bb.maxLng)), 20, 20, 20, 20);
+      new km.CustomOverlay({
+        map: map, position: new km.LatLng(c.lat, c.lng), xAnchor: 0, yAnchor: 0, zIndex: 1, clickable: false,
+        content: '<div class="dong-label">' + RE.escapeHTML(CFG.searchArea.dong) + '</div>'
+      });
+      state.popup = new km.CustomOverlay({ xAnchor: 0, yAnchor: 0, zIndex: 2000, clickable: true });
+      km.event.addListener(map, "click", function () { state.popup.setMap(null); });
+      state.map = map;
+      state.provider = "kakao";
+      return "kakao";
+    });
+  }
+
+  var kakaoAdapter = {
+    addMarker: function (p, el) {
+      var km = global.kakao.maps;
+      return new km.CustomOverlay({
+        map: state.map, position: new km.LatLng(p.latitude, p.longitude),
+        content: el, xAnchor: 0, yAnchor: 0, zIndex: 100, clickable: true
+      });
+    },
+    removeMarker: function (m) { m.setMap(null); },
+    openPopup: function (m, html) {
+      var box = document.createElement("div");
+      box.className = "kakao-popup";
+      box.innerHTML = '<button type="button" class="map-popup-close" aria-label="닫기">×</button>' + html;
+      box.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (e.target.closest(".map-popup-close")) { state.popup.setMap(null); return; }
+        var btn = e.target.closest("[data-detail-id]");
+        if (btn && state.handlers.onDetail) state.handlers.onDetail(btn.getAttribute("data-detail-id"));
+      });
+      state.popup.setContent(box);
+      state.popup.setPosition(m.getPosition());
+      state.popup.setMap(state.map);
+    },
+    closePopup: function () { if (state.popup) state.popup.setMap(null); },
+    panTo: function (p) { state.map.panTo(new global.kakao.maps.LatLng(p.latitude, p.longitude)); },
+    setZIndex: function (m, z) { m.setZIndex(z); },
+    relayout: function () { state.map.relayout(); },
+    credit: "지도: Kakao Maps"
+  };
+
   /* ---------- Leaflet / OSM ---------- */
   function initLeaflet(el) {
     var base = "https://unpkg.com/leaflet@" + LEAFLET_VER + "/dist/";
@@ -238,13 +326,14 @@
     credit: "지도: © OpenStreetMap contributors"
   };
 
-  function adapter() { return state.provider === "naver" ? naverAdapter : leafletAdapter; }
+  function adapter() { return state.provider === "kakao" ? kakaoAdapter : state.provider === "naver" ? naverAdapter : leafletAdapter; }
 
   /* ---------- 공개 API ---------- */
   function init(el, handlers) {
     state.handlers = handlers || {};
     var mode = (CFG.map && CFG.map.provider) || "auto";
-    var hasNaver = !!(CFG.map && CFG.map.naverClientId);
+    var mc = CFG.map || {};
+    var hasKakao = !!mc.kakaoAppKey, hasNaver = !!mc.naverClientId;
 
     // 팝업 안 '상세보기' 버튼 (이벤트 위임)
     el.addEventListener("click", function (e) {
@@ -253,11 +342,22 @@
     });
 
     if (mode === "none") return Promise.reject(new Error("지도 사용 안 함"));
-    if (mode === "osm" || mode === "leaflet" || (mode === "auto" && !hasNaver)) return initLeaflet(el);
-    return initNaver(el).catch(function (err) {
-      console.warn("[map] NAVER 지도 실패:", err.message);
-      if (mode === "naver") throw err;
-      el.innerHTML = "";
+    if (mode === "osm" || mode === "leaflet") return initLeaflet(el);
+    // 우선순위: 카카오 → 네이버 → OpenStreetMap (실패하면 다음 순서로)
+    var order = mode === "kakao" ? ["kakao"] : mode === "naver" ? ["naver"] : [];
+    if (mode === "auto") { if (hasKakao) order.push("kakao"); if (hasNaver) order.push("naver"); }
+    var strict = mode === "kakao" || mode === "naver";
+    var inits = { kakao: initKakao, naver: initNaver };
+    var chain = Promise.reject(new Error("start"));
+    order.forEach(function (name, i) {
+      chain = chain.catch(function (err) {
+        if (i > 0) { console.warn("[map] 지도 실패:", err.message); el.innerHTML = ""; }
+        return inits[name](el);
+      });
+    });
+    if (strict) return chain;
+    return chain.catch(function (err) {
+      if (order.length) { console.warn("[map] 지도 실패:", err.message); el.innerHTML = ""; }
       return initLeaflet(el);
     });
   }
