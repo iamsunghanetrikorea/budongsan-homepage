@@ -11,7 +11,7 @@
 
   var NUM_FIELDS = ["priceKRW", "depositKRW", "monthlyRentKRW", "maintenanceFeeKRW", "areaM2", "supplyAreaM2", "totalFloors", "rooms", "baths", "latitude", "longitude"];
   var FIELD_ORDER = ["id", "title", "transaction", "propertyType", "priceKRW", "depositKRW", "monthlyRentKRW", "maintenanceFeeKRW",
-    "areaM2", "supplyAreaM2", "floor", "totalFloors", "rooms", "baths", "moveInDate", "addressDong", "latitude", "longitude",
+    "areaM2", "supplyAreaM2", "buildingDong", "floor", "totalFloors", "rooms", "baths", "moveInDate", "addressDong", "latitude", "longitude",
     "highlights", "description", "images", "featured", "status", "updatedAt", "lastCheckedAt"];
 
   var state = { items: [], editingId: null, dirty: false, baseSha: null, pending: {} };
