@@ -113,6 +113,12 @@
   }
 
   /* ---------- 목록 ---------- */
+  /** 매물처: 해당동 · 해당층 */
+  function locText(p) {
+    var d = p.buildingDong ? (/^\d+$/.test(String(p.buildingDong)) ? p.buildingDong + "동" : String(p.buildingDong)) : "";
+    return [d, RE.floorText(p)].filter(Boolean).join(" ");
+  }
+
   function renderRows() {
     var f = $("#list-filter").value;
     var rows = state.items.filter(function (p) { return !f || p.status === f; })
@@ -130,6 +136,7 @@
         "<td>" + RE.escapeHTML(tx ? tx.label : "?") + "</td>" +
         "<td>" + RE.escapeHTML(RE.PROPERTY_TYPES[p.propertyType] || "?") + "</td>" +
         '<td class="title">' + RE.escapeHTML(p.title) + (p.featured ? " ⭐" : "") + "</td>" +
+        "<td>" + RE.escapeHTML(locText(p)) + "</td>" +
         "<td>" + RE.escapeHTML(RE.priceText(p)) + "</td>" +
         "<td>" + (geoOk ? '<span class="ok">✓ 도안동</span>' : '<span class="bad">✗ 좌표</span>') + "</td>" +
         "<td>" + RE.escapeHTML(p.lastCheckedAt || p.updatedAt || "") + "</td>" +
