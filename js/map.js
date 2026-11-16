@@ -274,7 +274,11 @@
         else if (b.bottom > mr.bottom - pad) dy = Math.min(b.bottom - mr.bottom + pad, b.top - mr.top - pad);
         if (b.left < mr.left + pad) dx = b.left - mr.left - pad;
         else if (b.right > mr.right - pad) dx = b.right - mr.right + pad;
-        if (dx || dy) state.map.panBy(Math.round(dx), Math.round(dy));
+        if (!dx && !dy) return;
+        // panBy(부드러운 이동)는 백그라운드 탭 등에서 멈출 수 있어 즉시 이동(setCenter) 사용
+        var km = global.kakao.maps, pr = state.map.getProjection();
+        var cp = pr.containerPointFromCoords(state.map.getCenter());
+        state.map.setCenter(pr.coordsFromContainerPoint(new km.Point(cp.x + dx, cp.y + dy)));
       }, 80);
     },
     closePopup: function () { if (state.popup) state.popup.setMap(null); },
