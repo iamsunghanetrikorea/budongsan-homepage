@@ -231,6 +231,7 @@
       km.event.addListener(map, "click", function () { state.popup.setMap(null); });
       state.map = map;
       state.provider = "kakao";
+      state.el = el;
       return "kakao";
     });
   }
@@ -257,6 +258,20 @@
       state.popup.setContent(box);
       state.popup.setPosition(m.getPosition());
       state.popup.setMap(state.map);
+      // 팝업이 지도 밖으로 잘리지 않게 화면을 이동 (카카오 CustomOverlay는 자동 이동이 없음)
+      setTimeout(function () {
+        var mapEl = state.el;
+        var pt = state.map.getProjection().containerPointFromCoords(m.getPosition());
+        var h = box.offsetHeight + 52, w = box.offsetWidth / 2, pad = 12;
+        var W = mapEl ? mapEl.offsetWidth : 0;
+        var dy = pt.y - h - pad < 0 ? pt.y - h - pad : 0;
+        var dx = 0;
+        if (W) {
+          if (pt.x - w - pad < 0) dx = pt.x - w - pad;
+          else if (pt.x + w + pad > W) dx = pt.x + w + pad - W;
+        }
+        if (dx || dy) state.map.panBy(dx, dy);
+      }, 0);
     },
     closePopup: function () { if (state.popup) state.popup.setMap(null); },
     panTo: function (p) { state.map.panTo(new global.kakao.maps.LatLng(p.latitude, p.longitude)); },
