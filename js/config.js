@@ -26,9 +26,14 @@ window.SITE_CONFIG = {
   },
 
   map: {
-    // "osm"  : OpenStreetMap 지도 (무료, API 키 불필요)
-    // "none" : 지도 끔 (목록·전화 상담만 표시)
-    provider: "osm"
+    // "auto"  : naverClientId가 있으면 네이버 지도, 없거나 인증 실패 시 OpenStreetMap
+    // "naver" : 네이버 지도만 사용 / "osm" : OpenStreetMap만 사용 / "none" : 지도 끔
+    provider: "auto",
+    // ▼ 네이버 클라우드 플랫폼 > Maps > Application 의 Client ID 를 따옴표 안에 넣으면 네이버 지도로 전환됩니다.
+    //   (공개 식별자. Client Secret 은 절대 넣지 마세요. 서비스 URL에 https://iamsunghanetrikorea.github.io 등록 필요)
+    naverClientId: "",
+    // 인증 파라미터명 (현행 NCP Maps: "ncpKeyId", 구버전 AI·NAVER API 키: "ncpClientId")
+    naverKeyParam: "ncpKeyId"
   },
 
   // 관리자 화면의 [홈페이지에 게시]가 매물 데이터를 올릴 GitHub 저장소 (공개 정보)

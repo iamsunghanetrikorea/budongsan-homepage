@@ -15,7 +15,6 @@
     "highlights", "description", "images", "featured", "status", "updatedAt", "lastCheckedAt"];
 
   var state = { items: [], editingId: null, dirty: false, baseSha: null, pending: {} };
-  var map, pickMarker;
 
   /* ---------- 유틸 ---------- */
   function today() {
@@ -347,25 +346,105 @@
     el.addEventListener("input", updateMoneyHints);
   });
 
-  /* ---------- 좌표 선택 지도 (OpenStreetMap / Leaflet) ---------- */
-  function ensureMap() {
-    if (map || !window.L) {
-      if (!window.L) $("#pick-map").textContent = "지도 라이브러리를 불러오지 못했습니다. 위도·경도를 직접 입력하세요.";
-      setTimeout(function () { if (map) map.invalidateSize(); }, 50);
-      return;
-    }
-    var c = CFG.searchArea.center;
-    map = L.map("pick-map", { center: [c.lat, c.lng], zoom: 15, minZoom: 13 });
+  /* ---------- 좌표 선택 지도 (네이버 지도 → 실패·미설정 시 OpenStreetMap/Leaflet) ---------- */
+  // pick: { setMarker(lat,lng), clearMarker(), setView(lat,lng,zoom), relayout() }
+  var pick = null, pickLoading = false;
+
+  function setPicked(lat, lng) {
+    form.latitude.value = lat.toFixed(6);
+    form.longitude.value = lng.toFixed(6);
+    syncMarker(false);
+  }
+
+  function initLeafletPick(el) {
+    if (!window.L) return Promise.reject(new Error("Leaflet 없음"));
+    var c = CFG.searchArea.center, marker = null;
+    var m = L.map(el, { center: [c.lat, c.lng], zoom: 15, minZoom: 13 });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19, attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(map);
+    }).addTo(m);
     var ring = RE.boundaryRing().map(function (pt) { return [pt[1], pt[0]]; });
-    var poly = L.polygon(ring, { color: "#1f5fd6", weight: 3, fillOpacity: 0.08 }).addTo(map);
-    map.fitBounds(poly.getBounds(), { padding: [10, 10] });
-    map.on("click", function (e) {
-      form.latitude.value = e.latlng.lat.toFixed(6);
-      form.longitude.value = e.latlng.lng.toFixed(6);
-      syncMarker(false);
+    var poly = L.polygon(ring, { color: "#1f5fd6", weight: 3, fillOpacity: 0.08, interactive: false }).addTo(m);
+    m.fitBounds(poly.getBounds(), { padding: [10, 10] });
+    m.on("click", function (e) { setPicked(e.latlng.lat, e.latlng.lng); });
+    return Promise.resolve({
+      setMarker: function (lat, lng) { if (!marker) marker = L.marker([lat, lng]).addTo(m); else marker.setLatLng([lat, lng]); },
+      clearMarker: function () { if (marker) { marker.remove(); marker = null; } },
+      setView: function (lat, lng, z) { m.setView([lat, lng], z); },
+      relayout: function () { m.invalidateSize(); }
+    });
+  }
+
+  function initNaverPick(el) {
+    var mc = CFG.map || {};
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      window.navermap_authFailure = function () {
+        if (!settled) { settled = true; reject(new Error("네이버 지도 인증 실패 (Client ID·서비스 URL 확인)")); return; }
+        // 지도 생성 후 늦게 인증 실패가 오면 OpenStreetMap으로 교체
+        msg("네이버 지도 인증 실패 (Client ID·서비스 URL 확인) — OpenStreetMap 지도로 대신 표시합니다.", true);
+        pick = null;
+        el.innerHTML = "";
+        initLeafletPick(el).then(function (api) { pick = api; syncMarker(true); });
+      };
+      var s = document.createElement("script");
+      var timer = setTimeout(function () { if (!settled) { settled = true; reject(new Error("네이버 지도 로딩 시간 초과")); } }, 10000);
+      s.src = "https://oapi.map.naver.com/openapi/v3/maps.js?" + (mc.naverKeyParam || "ncpKeyId") + "=" + encodeURIComponent(mc.naverClientId);
+      s.async = true;
+      s.onerror = function () { clearTimeout(timer); if (!settled) { settled = true; reject(new Error("네이버 지도 스크립트 로드 실패")); } };
+      s.onload = function () {
+        clearTimeout(timer);
+        if (settled) return;
+        var nv = window.naver && window.naver.maps;
+        if (!nv) { settled = true; reject(new Error("네이버 지도 객체 없음")); return; }
+        var c = CFG.searchArea.center, marker = null;
+        var m = new nv.Map(el, {
+          center: new nv.LatLng(c.lat, c.lng), zoom: 15, minZoom: 13,
+          zoomControl: true, zoomControlOptions: { position: nv.Position.RIGHT_BOTTOM, style: nv.ZoomControlStyle.SMALL },
+          scaleControl: true, mapDataControl: false
+        });
+        var ring = RE.boundaryRing().map(function (pt) { return new nv.LatLng(pt[1], pt[0]); });
+        new nv.Polygon({ map: m, paths: [ring], clickable: false,
+          strokeColor: "#1f5fd6", strokeWeight: 3, strokeOpacity: 0.9, fillColor: "#1f5fd6", fillOpacity: 0.08 });
+        var bb = RE.boundaryBBox();
+        m.fitBounds(new nv.LatLngBounds(new nv.LatLng(bb.minLat, bb.minLng), new nv.LatLng(bb.maxLat, bb.maxLng)),
+          { top: 10, right: 10, bottom: 10, left: 10 });
+        nv.Event.addListener(m, "click", function (e) { setPicked(e.coord.lat(), e.coord.lng()); });
+        settled = true;
+        resolve({
+          setMarker: function (lat, lng) {
+            var pos = new nv.LatLng(lat, lng);
+            if (!marker) marker = new nv.Marker({ map: m, position: pos }); else marker.setPosition(pos);
+          },
+          clearMarker: function () { if (marker) { marker.setMap(null); marker = null; } },
+          setView: function (lat, lng, z) { m.setCenter(new nv.LatLng(lat, lng)); m.setZoom(z); },
+          relayout: function () { m.setSize(new nv.Size(el.offsetWidth, el.offsetHeight)); }
+        });
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  function ensureMap() {
+    if (pick) { setTimeout(pick.relayout, 50); return; }
+    if (pickLoading) return;
+    pickLoading = true;
+    var el = $("#pick-map");
+    var mc = CFG.map || {};
+    var mode = mc.provider || "auto";
+    if (mode === "none") { el.textContent = "지도 사용 안 함 — 위도·경도를 직접 입력하세요."; return; }
+    var useNaver = mc.naverClientId && (mode === "auto" || mode === "naver");
+    var p = useNaver ? initNaverPick(el).catch(function (err) {
+      console.warn("[map]", err.message);
+      el.innerHTML = "";
+      msg(err.message + " — OpenStreetMap 지도로 대신 표시합니다.", true);
+      return initLeafletPick(el);
+    }) : initLeafletPick(el);
+    p.then(function (api) {
+      pick = api;
+      syncMarker(true);
+    }).catch(function () {
+      el.textContent = "지도 라이브러리를 불러오지 못했습니다. 위도·경도를 직접 입력하세요.";
     });
   }
 
@@ -376,11 +455,10 @@
     var st = $("#geo-state");
     st.className = "geo-state " + (inside ? "ok" : ok ? "bad" : "");
     st.textContent = !ok ? "좌표 없음" : inside ? "✓ 도안동 경계 안" : "✗ 도안동 경계 밖 — 게시 불가";
-    if (!map) return;
-    if (!ok) { if (pickMarker) { pickMarker.remove(); pickMarker = null; } return; }
-    if (!pickMarker) pickMarker = L.marker([lat, lng]).addTo(map);
-    else pickMarker.setLatLng([lat, lng]);
-    if (pan) map.setView([lat, lng], 16);
+    if (!pick) return;
+    if (!ok) { pick.clearMarker(); return; }
+    pick.setMarker(lat, lng);
+    if (pan) pick.setView(lat, lng, 16);
   }
   form.latitude.addEventListener("input", function () { syncMarker(true); });
   form.longitude.addEventListener("input", function () { syncMarker(true); });
