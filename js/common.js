@@ -144,12 +144,26 @@
     return /^assets\/properties\/[A-Za-z0-9_\-\/]+\.(webp|jpe?g|png)$/i.test(path) && path.indexOf("..") === -1;
   }
 
-  // 사진이 없는 매물에 보여줄 대체 이미지 (아파트는 샘플 사진)
-  var SAMPLE_PHOTOS = { apartment: "assets/placeholders/apartment-sample.webp" };
+  // 사진이 없는 매물: 매물명에 단지명이 들어 있으면 그 단지의 샘플 사진을 보여줌
+  // (사진 파일은 assets/placeholders/ 에 "-sample" 이름으로 넣고 여기에 한 줄 추가)
+  var COMPLEX_PHOTOS = [
+    { match: /시티레이크/, src: "assets/placeholders/citylake-sample.webp" }
+    // { match: /예미지/, src: "assets/placeholders/yemiji-sample.webp" }
+  ];
+  function samplePhoto(p) {
+    var t = String((p && p.title) || "");
+    for (var i = 0; i < COMPLEX_PHOTOS.length; i++) if (COMPLEX_PHOTOS[i].match.test(t)) return COMPLEX_PHOTOS[i].src;
+    return "";
+  }
+
   function placeholderImage(type) {
-    if (SAMPLE_PHOTOS[type]) return SAMPLE_PHOTOS[type];
     var known = ["apartment", "officetel", "house", "commercial", "land"];
     return "assets/placeholders/" + (known.indexOf(type) >= 0 ? type : "etc") + ".svg";
+  }
+
+  /** 대표 사진: 매물 사진 → 단지 샘플 사진 → 종류별 기본 그림 */
+  function coverImage(p) {
+    return (p.images && p.images[0]) || samplePhoto(p) || placeholderImage(p.propertyType);
   }
 
   /** 실제 매물 사진이 아닌 샘플 사진인지 ("샘플 사진" 표시용) */
@@ -176,6 +190,8 @@
     escapeHTML: escapeHTML,
     isValidImagePath: isValidImagePath,
     placeholderImage: placeholderImage,
+    samplePhoto: samplePhoto,
+    coverImage: coverImage,
     isSamplePhoto: isSamplePhoto
   };
 })(window);

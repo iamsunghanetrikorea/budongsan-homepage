@@ -65,7 +65,7 @@
   }
 
   function popupHTML(p) {
-    var img = (p.images && p.images[0]) || RE.placeholderImage(p.propertyType);
+    var img = RE.coverImage(p);
     var meta = [RE.locText(p), RE.areaText(p)].filter(Boolean).join(" · ");
     return '<div class="map-popup">' +
       '<div class="map-popup-img"><img src="' + RE.escapeHTML(img) + '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'' + RE.placeholderImage(p.propertyType) + '\'">' +

@@ -142,7 +142,7 @@
 
   /* ---------- 렌더링 ---------- */
   function thumb(p) {
-    return (p.images && p.images[0]) || RE.placeholderImage(p.propertyType);
+    return RE.coverImage(p);
   }
 
   function imgTag(src, cls, type, alt) {
@@ -227,7 +227,7 @@
     if (!p) return;
     lastFocus = document.activeElement;
     var dlg = $("#detail");
-    var imgs = p.images && p.images.length ? p.images : [RE.placeholderImage(p.propertyType)];
+    var imgs = p.images && p.images.length ? p.images : [RE.coverImage(p)];
     var tx = RE.TRANSACTIONS[p.transaction];
     var rows = [
       ["거래유형", tx.label],
