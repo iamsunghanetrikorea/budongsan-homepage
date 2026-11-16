@@ -268,7 +268,8 @@
       setTimeout(function () {
         var mapEl = state.el;
         var pt = state.map.getProjection().containerPointFromCoords(m.getPosition());
-        var h = box.offsetHeight + FLAG_H + 4, w = box.offsetWidth / 2, pad = 12;
+        // 카카오가 오버레이를 늦게 그리면 크기가 0일 수 있어 기본값 사용
+        var h = (box.offsetHeight || 270) + FLAG_H + 4, w = (box.offsetWidth || 250) / 2, pad = 12;
         var W = mapEl ? mapEl.offsetWidth : 0;
         var dy = pt.y - h - pad < 0 ? pt.y - h - pad : 0;
         var dx = 0;
@@ -277,7 +278,7 @@
           else if (pt.x + w + pad > W) dx = pt.x + w + pad - W;
         }
         if (dx || dy) state.map.panBy(dx, dy);
-      }, 0);
+      }, 80);
     },
     closePopup: function () { if (state.popup) state.popup.setMap(null); },
     panTo: function (p) { state.map.panTo(new global.kakao.maps.LatLng(p.latitude, p.longitude)); },
