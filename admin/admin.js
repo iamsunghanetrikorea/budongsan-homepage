@@ -116,7 +116,8 @@
   /** 매물처: 해당동 · 해당층 */
   function locText(p) {
     var d = p.buildingDong ? (/^\d+$/.test(String(p.buildingDong)) ? p.buildingDong + "동" : String(p.buildingDong)) : "";
-    return [d, RE.floorText(p)].filter(Boolean).join(" ");
+    var f = p.floor && p.floor !== "-" ? (/^\d+$/.test(String(p.floor)) ? p.floor + "층" : String(p.floor)) : "";
+    return [d, f].filter(Boolean).join(" ");
   }
 
   function renderRows() {
