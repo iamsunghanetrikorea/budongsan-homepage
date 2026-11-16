@@ -140,16 +140,21 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
 .map-panel.is-expanded { position: fixed; inset: 0; z-index: 900; border-radius: 0; min-height: 0; }
 
 /* 마커 (네이버/Leaflet 공통 HTML) */
-.pin { position: relative; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; cursor: pointer; filter: drop-shadow(0 3px 5px rgba(0,0,0,.25)); }
-.pin-label { display: flex; align-items: center; gap: 6px; color: #fff; padding: 7px 12px; border-radius: 8px; font-weight: 800; font-size: 15px; white-space: nowrap; line-height: 1.1; border: 2px solid transparent; }
-.pin-label svg { width: 17px; height: 17px; fill: #fff; }
-.pin-dot { width: 22px; height: 22px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); margin-top: -2px; display: grid; place-items: center; }
-.pin-dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
-.pin--sale .pin-label, .pin--sale .pin-dot { background: var(--red); }
-.pin--jeonse .pin-label, .pin--jeonse .pin-dot { background: var(--blue); }
-.pin--monthly .pin-label, .pin--monthly .pin-dot { background: var(--monthly); }
+.pin { position: relative; cursor: pointer; }
+/* 깃발 마커: 깃대 아래 끝(왼쪽 아래)이 매물 위치 */
+.pin.flag { transform: translate(-3px, -100%); display: flex; align-items: flex-start; filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
+.flag-icon { width: 22px; height: 32px; flex: none; display: block; }
+.flag-pole { fill: #34404b; }
+.flag-label { display: inline-flex; align-items: center; gap: 4px; margin-left: -2px; margin-top: 1px; padding: 2px 6px 2px 5px; background: #fff; border: 1.5px solid currentColor; border-radius: 6px; font-size: 12px; line-height: 1.2; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.flag-tx { font-weight: 800; }
+.flag-loc { color: var(--ink); }
+.pin--sale { color: var(--red); } .pin--sale .flag-cloth { fill: var(--red); }
+.pin--jeonse { color: var(--blue); } .pin--jeonse .flag-cloth { fill: var(--blue); }
+.pin--monthly { color: var(--monthly); } .pin--monthly .flag-cloth { fill: var(--monthly); }
 .pin.is-selected { z-index: 10; }
-.pin.is-selected .pin-label { border-color: #fff; outline: 3px solid var(--ink); transform: scale(1.08); }
+.pin.is-selected .flag-label { background: currentColor; }
+.pin.is-selected .flag-label b, .pin.is-selected .flag-loc { color: #fff; }
+.pin.is-selected .flag-icon { transform: scale(1.15); transform-origin: 3px 32px; }
 .leaflet-div-icon.pin-host { background: transparent; border: 0; }
 .dong-label { font-size: 34px; font-weight: 900; color: #1f5fd6; opacity: .75; letter-spacing: -0.02em; pointer-events: none; text-shadow: 0 1px 0 #fff, 0 0 6px #fff; transform: translate(-50%, -50%); white-space: nowrap; }
 
@@ -162,7 +167,7 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
 .map-popup-meta { color: var(--ink-2); font-size: .88rem; margin-top: 2px; }
 .map-popup .btn { min-height: 38px; margin-top: 8px; width: 100%; }
 .map-popup-close { position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 18px; cursor: pointer; }
-.kakao-popup { position: relative; transform: translate(-50%, calc(-100% - 52px)); }
+.kakao-popup { position: relative; transform: translate(-50%, calc(-100% - 36px)); }
 .kakao-popup .map-popup-close { z-index: 1; }
 .leaflet-popup-content-wrapper { padding: 0; border-radius: 12px; overflow: hidden; }
 .leaflet-popup-content { margin: 0; width: auto !important; }
@@ -312,7 +317,6 @@ select { min-height: 42px; padding: 0 36px 0 12px; border-radius: 10px; border: 
   .map-panel { min-height: 360px; }
   .map-area-badge { font-size: .95rem; padding: 8px 12px; top: 10px; left: 10px; }
   .map-expand { top: 10px; right: 10px; }
-  .pin-label { font-size: 13px; padding: 5px 9px; }
   .card-btn { grid-template-columns: 104px 1fr 16px; gap: 12px; }
   .card-thumb { width: 104px; height: 84px; }
   .card-title { display: block; font-size: 1.02rem; }

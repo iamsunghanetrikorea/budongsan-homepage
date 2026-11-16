@@ -151,7 +151,7 @@
   }
 
   function metaParts(p) {
-    var parts = [RE.areaText(p), RE.floorText(p)];
+    var parts = [RE.locText(p), RE.areaText(p)];
     var rooms = RE.roomsText(p);
     if (rooms) parts.push(rooms);
     else if (p.highlights && p.highlights[0]) parts.push(p.highlights[0]);
@@ -232,8 +232,8 @@
       ["매물종류", RE.PROPERTY_TYPES[p.propertyType]],
       ["가격", RE.priceText(p)],
       ["면적", RE.areaText(p)],
-      ["동", p.buildingDong ? (/^\d+$/.test(String(p.buildingDong)) ? p.buildingDong + "동" : String(p.buildingDong)) : ""],
-      ["층", RE.floorText(p)],
+      ["동", RE.dongText(p)],
+      ["층", RE.floorOnlyText(p)],
       ["방 / 욕실", RE.roomsText(p)],
       ["관리비", p.maintenanceFeeKRW ? "월 " + RE.formatKRW(p.maintenanceFeeKRW) : ""],
       ["입주 가능일", p.moveInDate],

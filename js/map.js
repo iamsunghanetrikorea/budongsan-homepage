@@ -6,7 +6,11 @@
   var CFG = global.SITE_CONFIG;
   var RE = global.RE;
   var LEAFLET_VER = "1.9.4";
-  var HOME_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3L12 3Z"/></svg>';
+  // 깃발 아이콘: 깃대 아래 끝이 매물 위치
+  var FLAG_ICON = '<svg class="flag-icon" viewBox="0 0 22 32" aria-hidden="true">' +
+    '<rect class="flag-pole" x="2" y="1" width="2.4" height="31" rx="1.2"/>' +
+    '<path class="flag-cloth" d="M4.4 2h15.6l-4.2 5.5 4.2 5.5H4.4z"/></svg>';
+  var FLAG_H = 32; // 팝업을 깃발 위에 띄우기 위한 높이(px)
 
   var state = {
     provider: null,
@@ -37,21 +41,22 @@
     document.head.appendChild(l);
   }
 
+  // 지도 라벨: 거래유형 + 해당동·해당층 (예: "월세 101동 12층")
   function markerLabel(p) {
     var tx = RE.TRANSACTIONS[p.transaction] ? RE.TRANSACTIONS[p.transaction].label : "";
-    var price;
-    if (p.transaction === "monthly") price = RE.formatKRW(p.monthlyRentKRW, { short: true });
-    else price = RE.priceText(p, true);
-    return tx + " " + price;
+    return { tx: tx, loc: RE.locText(p) };
   }
+
 
   function buildPinEl(p) {
     var el = document.createElement("div");
-    el.className = "pin pin--" + p.transaction;
+    el.className = "pin flag pin--" + p.transaction;
     el.setAttribute("role", "button");
     el.setAttribute("tabindex", "0");
-    el.setAttribute("aria-label", p.title + " " + RE.TRANSACTIONS[p.transaction].label + " " + RE.priceText(p));
-    el.innerHTML = '<span class="pin-label">' + HOME_ICON + RE.escapeHTML(markerLabel(p)) + '</span><span class="pin-dot"></span>';
+    el.setAttribute("aria-label", [p.title, RE.TRANSACTIONS[p.transaction].label, RE.locText(p), RE.priceText(p)].filter(Boolean).join(" "));
+    var lb = markerLabel(p);
+    el.innerHTML = FLAG_ICON + '<span class="flag-label"><b class="flag-tx">' + RE.escapeHTML(lb.tx) + '</b>' +
+      (lb.loc ? '<span class="flag-loc">' + RE.escapeHTML(lb.loc) + '</span>' : "") + '</span>';
     el.addEventListener("click", function (e) { e.stopPropagation(); select(p.id, { fromMap: true }); });
     el.addEventListener("keydown", function (e) {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(p.id, { fromMap: true }); }
@@ -61,7 +66,7 @@
 
   function popupHTML(p) {
     var img = (p.images && p.images[0]) || RE.placeholderImage(p.propertyType);
-    var meta = [RE.areaText(p), RE.floorText(p)].filter(Boolean).join(" · ");
+    var meta = [RE.locText(p), RE.areaText(p)].filter(Boolean).join(" · ");
     return '<div class="map-popup">' +
       '<img src="' + RE.escapeHTML(img) + '" alt="" loading="lazy" onerror="this.src=\'' + RE.placeholderImage(p.propertyType) + '\'">' +
       '<div class="map-popup-body">' +
@@ -143,7 +148,7 @@
           });
           state.popup = new nv.InfoWindow({
             content: "", borderWidth: 0, backgroundColor: "transparent", disableAnchor: true,
-            pixelOffset: new nv.Point(0, -52), disableAutoPan: false
+            pixelOffset: new nv.Point(0, -(FLAG_H + 4)), disableAutoPan: false
           });
           nv.Event.addListener(map, "click", function () { state.popup.close(); });
           settled = true;
@@ -262,7 +267,7 @@
       setTimeout(function () {
         var mapEl = state.el;
         var pt = state.map.getProjection().containerPointFromCoords(m.getPosition());
-        var h = box.offsetHeight + 52, w = box.offsetWidth / 2, pad = 12;
+        var h = box.offsetHeight + FLAG_H + 4, w = box.offsetWidth / 2, pad = 12;
         var W = mapEl ? mapEl.offsetWidth : 0;
         var dy = pt.y - h - pad < 0 ? pt.y - h - pad : 0;
         var dx = 0;
@@ -316,7 +321,7 @@
         interactive: false, keyboard: false,
         icon: L.divIcon({ className: "pin-host", html: '<div class="dong-label">' + RE.escapeHTML(CFG.searchArea.dong) + '</div>', iconSize: [0, 0] })
       }).addTo(map);
-      state.popup = L.popup({ offset: L.point(0, -52), closeButton: true, autoPanPadding: L.point(20, 60), maxWidth: 260, minWidth: 250 });
+      state.popup = L.popup({ offset: L.point(0, -(FLAG_H + 4)), closeButton: true, autoPanPadding: L.point(20, 60), maxWidth: 260, minWidth: 250 });
       state.map = map;
       state.provider = "leaflet";
       return "leaflet";

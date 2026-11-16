@@ -72,6 +72,24 @@
     return ex ? "전용 " + ex + pyeong : "-";
   }
 
+  /** 해당동: 숫자만 입력했으면 "동"을 붙임 */
+  function dongText(p) {
+    if (!p.buildingDong) return "";
+    var d = String(p.buildingDong).trim();
+    return /^\d+$/.test(d) ? d + "동" : d;
+  }
+
+  /** 해당층만 (총층 제외) */
+  function floorOnlyText(p) {
+    if (!p.floor || p.floor === "-") return "";
+    return /^\d+$/.test(String(p.floor)) ? p.floor + "층" : String(p.floor);
+  }
+
+  /** 해당동 + 해당층 (예: "101동 12층") */
+  function locText(p) {
+    return [dongText(p), floorOnlyText(p)].filter(Boolean).join(" ");
+  }
+
   function floorText(p) {
     if (!p.floor || p.floor === "-") return "";
     var f = /^\d+$/.test(String(p.floor)) ? p.floor + "층" : String(p.floor);
@@ -140,6 +158,9 @@
     priceValue: priceValue,
     areaText: areaText,
     floorText: floorText,
+    dongText: dongText,
+    floorOnlyText: floorOnlyText,
+    locText: locText,
     roomsText: roomsText,
     isInDoanDong: isInDoanDong,
     boundaryBBox: boundaryBBox,
