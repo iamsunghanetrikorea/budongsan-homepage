@@ -703,13 +703,24 @@
   }
 
   /* 홈페이지에 게시: 매물 데이터 + 새 사진을 커밋 1개로 올림 */
+  /** 게시 진행 상황: 상단 메시지 + 버튼 아래 표시. kind: "busy" | "ok" | "err" | "info" */
+  function pubMsg(text, kind, link) {
+    msg(text, kind === "err", kind !== "info", link);
+    var el = $("#publish-status");
+    el.className = "save-status " + kind;
+    el.innerHTML = RE.escapeHTML(text) +
+      (link ? ' <a href="' + RE.escapeHTML(link.href) + '" target="_blank" rel="noopener">' + RE.escapeHTML(link.text) + "</a>" : "");
+    el.hidden = false;
+  }
+
   function ghPublish(opts) {
-    if (!ghToken()) { openGhDialog(); msg("먼저 GitHub 연결(토큰)을 설정하세요.", true); return; }
+    if (!ghToken()) { openGhDialog(); pubMsg("먼저 GitHub 연결(토큰)을 설정하세요.", "err"); return; }
     if (!(opts && opts.saved) && state.editingId && !$("#editor").hidden && !confirm("편집 중인 매물은 [내용 저장]을 눌러야 게시에 포함됩니다. 저장된 내용만 게시할까요?")) return;
     var problem = checkPublishable();
-    if (problem) { msg(problem, true, true); return; }
+    if (problem) { pubMsg("게시하지 못했습니다 — " + problem, "err"); return; }
     if (!state.items.length && !confirm("매물이 0건입니다. 홈페이지의 매물을 모두 비울까요?")) return;
 
+    saveStatus("");
     var btns = $$("#gh-publish, #form-publish");
     btns.forEach(function (b) { b.disabled = true; });
     var data = exportData();
@@ -717,7 +728,7 @@
     var branch = encodeURIComponent(GH.branch);
     var headSha, baseTree, remoteSha, newDataSha, uploads = [];
 
-    msg("게시 준비 중… (저장소 상태 확인)", false, true);
+    pubMsg("⏳ 1/4 게시 준비 중… (저장소 상태 확인)", "busy");
     gh("GET", repoPath() + "/git/ref/heads/" + branch)
       .then(function (ref) { headSha = ref.object.sha; return gh("GET", repoPath() + "/git/commits/" + headSha); })
       .then(function (c) { baseTree = c.tree.sha; return gh("GET", repoPath() + "/git/trees/" + baseTree + "?recursive=1"); })
@@ -742,7 +753,7 @@
         uploads = Object.keys(state.pending).filter(function (src) { return needed[src]; });
         return uploads.reduce(function (chain, src, i) {
           return chain.then(function (entries) {
-            msg("사진 올리는 중… (" + (i + 1) + "/" + uploads.length + ")", false, true);
+            pubMsg("⏳ 2/4 사진 올리는 중… (" + (i + 1) + "/" + uploads.length + ")", "busy");
             return blobToB64(state.pending[src])
               .then(function (b64) { return gh("POST", repoPath() + "/git/blobs", { content: b64, encoding: "base64" }); })
               .then(function (b) { entries.push({ path: src, mode: "100644", type: "blob", sha: b.sha }); return entries; });
@@ -750,7 +761,7 @@
         }, Promise.resolve([]));
       })
       .then(function (entries) {
-        msg("매물 데이터 올리는 중…", false, true);
+        pubMsg("⏳ 3/4 매물 데이터 올리는 중…", "busy");
         return gh("POST", repoPath() + "/git/blobs", { content: utf8ToB64(json), encoding: "base64" }).then(function (b) {
           newDataSha = b.sha;
           if (newDataSha === remoteSha && !entries.length) {
@@ -770,12 +781,12 @@
         state.dirty = false;
         saveDraft();
         renderThumbs();
-        msg("게시했습니다. 홈페이지에 반영 중… (보통 1~3분)", false, true);
+        pubMsg("⏳ 4/4 게시했습니다. 홈페이지에 반영 중… (보통 1~3분)", "busy");
         watchDeploy(commitSha, Date.now());
       })
       .catch(function (e) {
-        if (e.cancelled) msg(e.message);
-        else msg("게시 실패: " + e.message, true, true);
+        if (e.cancelled) pubMsg(e.message, "info");
+        else pubMsg("✗ 게시 실패: " + e.message, "err");
       })
       .then(function () { btns.forEach(function (b) { b.disabled = false; }); });
   }
@@ -784,23 +795,23 @@
   function watchDeploy(sha, startedAt) {
     var site = { href: GH.pagesUrl, text: "홈페이지 열기" };
     if (Date.now() - startedAt > 6 * 60 * 1000) {
-      msg("게시는 완료됐습니다. 홈페이지 반영이 늦어지고 있으니 잠시 후 새로고침해 보세요.", false, true, site);
+      pubMsg("✓ 게시는 완료됐습니다. 홈페이지 반영이 늦어지고 있으니 잠시 후 새로고침해 보세요.", "ok", site);
       return;
     }
     gh("GET", repoPath() + "/actions/runs?head_sha=" + sha + "&per_page=1")
       .then(function (d) {
         var run = d && d.workflow_runs && d.workflow_runs[0];
         if (run && run.status === "completed") {
-          if (run.conclusion === "success") msg("✓ 홈페이지에 반영되었습니다. 열려 있는 홈페이지는 새로고침하세요.", false, true, site);
-          else msg("배포 중 문제가 생겼습니다 (" + run.conclusion + "). 데이터는 올라갔으니 잠시 후 다시 게시하거나 담당자에게 문의하세요.", true, true, { href: run.html_url, text: "배포 기록 보기" });
+          if (run.conclusion === "success") pubMsg("✓ 홈페이지에 반영되었습니다 (" + new Date().toLocaleTimeString("ko-KR") + "). 열려 있는 홈페이지는 새로고침하세요.", "ok", site);
+          else pubMsg("✗ 배포 중 문제가 생겼습니다 (" + run.conclusion + "). 데이터는 올라갔으니 잠시 후 다시 게시하거나 담당자에게 문의하세요.", "err", { href: run.html_url, text: "배포 기록 보기" });
           return;
         }
-        msg("게시했습니다. 홈페이지 반영 중… (" + (run ? (run.status === "queued" ? "대기" : "배포 진행") : "시작 대기") + ")", false, true);
+        pubMsg("⏳ 4/4 게시했습니다. 홈페이지 반영 중… (" + (run ? (run.status === "queued" ? "대기" : "배포 진행") : "시작 대기") + ")", "busy");
         setTimeout(function () { watchDeploy(sha, startedAt); }, 6000);
       })
       .catch(function () {
         // Actions 읽기 권한이 없는 토큰이면 상태 확인 생략
-        msg("게시했습니다. 1~3분 뒤 홈페이지를 새로고침하면 반영됩니다.", false, true, site);
+        pubMsg("✓ 게시했습니다. 1~3분 뒤 홈페이지를 새로고침하면 반영됩니다.", "ok", site);
       });
   }
 

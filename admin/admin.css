@@ -65,6 +65,8 @@ fieldset.money { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr))
 .save-status.busy { background: #fff6e0; color: #8a5a00; }
 .save-status.ok { background: #e6f6ec; color: #136b34; }
 .save-status.err { background: #fde8e8; color: #b00020; }
+.save-status.info { background: #eef1f4; color: #39424c; }
+.save-status a { color: inherit; }
 .btn-xl { min-height: 80px; padding: 0 28px; font-size: 2rem; border-radius: 12px; }
 .help ol { padding-left: 20px; margin: 8px 0 0; display: grid; gap: 4px; }
 .invalid { border-color: var(--red) !important; background: #fff6f5 !important; }
