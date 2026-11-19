@@ -1,7 +1,7 @@
 [
   {
     "id": "DA-0001",
-    "title": "도안아이파크",
+    "title": "도안아이파크 파인공인중개사사무소",
     "transaction": "sale",
     "propertyType": "apartment",
     "priceKRW": 595000000,
@@ -10,25 +10,25 @@
     "maintenanceFeeKRW": 280000,
     "areaM2": 84.97,
     "supplyAreaM2": 120.96,
-    "buildingDong": "1504",
+    "buildingDong": "1503",
     "floor": "14",
     "totalFloors": null,
     "rooms": 3,
     "baths": 2,
     "moveInDate": "즉시입주",
     "addressDong": "도안동",
-    "latitude": 36.32233,
-    "longitude": 127.347167,
+    "latitude": 36.321851,
+    "longitude": 127.347103,
     "highlights": [
-      "-도솔산과 갑젼뷰",
-      "-시스템 에어컨 2대",
-      "-집상태 깨끗"
+      "빠른 입주 가능.",
+      "도솔산과 갑천뷰.",
+      "시에 2대."
     ],
     "description": null,
     "images": [],
     "featured": false,
     "status": "published",
-    "updatedAt": "2026-11-18",
-    "lastCheckedAt": "2026-11-18"
+    "updatedAt": "2026-11-14",
+    "lastCheckedAt": "2026-11-14"
   }
 ]
