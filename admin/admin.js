@@ -193,6 +193,9 @@
     renderThumbs();
     ensureMap();
     syncMarker(true);
+    $("#geo-q").dataset.touched = "";
+    fillGeoQuery();
+    $("#geo-results").innerHTML = "";
     renderRows();
     $("#editor").scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -460,7 +463,7 @@
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
       var timer = setTimeout(function () { reject(new Error("카카오맵 로딩 시간 초과")); }, 10000);
-      s.src = "https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=" + encodeURIComponent(key);
+      s.src = "https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&libraries=services&appkey=" + encodeURIComponent(key);
       s.async = true;
       s.onerror = function () { clearTimeout(timer); reject(new Error("카카오맵 스크립트 로드 실패 (JavaScript 키·도메인 확인)")); };
       s.onload = function () {
@@ -537,6 +540,104 @@
     pick.setMarker(lat, lng);
     if (pan) pick.setView(lat, lng, 16);
   }
+  /* ---------- 매물명(아파트명) + 해당동으로 위치 찾기 (카카오 장소 검색) ---------- */
+  // 매물명에서 면적·평형 등 위치와 무관한 표현을 빼고 아파트 이름만 남김
+  function aptName(title) {
+    return String(title || "")
+      .replace(/\d+(\.\d+)?\s*(㎡|m2|m²|평형?|py)/gi, " ")
+      .replace(/(매매|전세|월세|급매|분양권|추천|아파트\s*$)/g, " ")
+      .replace(/[\[\]()·,/|]/g, " ")
+      .replace(/\s+/g, " ").trim();
+  }
+  function dongLabel(v) {
+    v = String(v || "").trim();
+    if (!v) return "";
+    return /^\d+$/.test(v) ? v + "동" : v;
+  }
+  function fillGeoQuery() {
+    var q = $("#geo-q");
+    if (q.dataset.touched) return;
+    q.value = (aptName(form.title.value) + " " + dongLabel(form.buildingDong.value)).trim();
+  }
+  form.title.addEventListener("input", fillGeoQuery);
+  form.buildingDong.addEventListener("input", fillGeoQuery);
+  $("#geo-q").addEventListener("input", function () { this.dataset.touched = this.value ? "1" : ""; });
+  $("#geo-q").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); geoFind(); } });
+
+  function kakaoKeyword(query) {
+    var km = window.kakao && window.kakao.maps;
+    var c = CFG.searchArea.center;
+    return new Promise(function (resolve) {
+      new km.services.Places().keywordSearch(query, function (data, status) {
+        resolve(status === km.services.Status.OK ? data : []);
+      }, { location: new km.LatLng(c.lat, c.lng), radius: 5000, size: 15 });
+    });
+  }
+
+  function geoFind() {
+    var out = $("#geo-results");
+    var km = window.kakao && window.kakao.maps;
+    if (!km || !km.services) {
+      out.innerHTML = '<p class="geo-msg bad">카카오맵이 연결되어 있지 않아 이름으로 찾을 수 없습니다. 지도를 클릭해 지정하세요.</p>';
+      return;
+    }
+    var q = $("#geo-q").value.replace(/\s+/g, " ").trim();
+    if (!q) { out.innerHTML = '<p class="geo-msg bad">매물명(아파트 이름)과 해당동을 입력하세요.</p>'; return; }
+    // 동 번호 (예: "1503동" → "1503")
+    var dm = /(\d{2,4})\s*동/.exec(q) || /(?:^|\s)(\d{2,4})$/.exec(q);
+    var dongNo = dm ? dm[1] : "";
+    var name = q.replace(/\d{2,4}\s*동/, "").replace(/(?:^|\s)\d{2,4}$/, "").trim();
+    var first = name.split(" ")[0];
+    var tries = [];
+    function add(t) { t = t.trim(); if (t && tries.indexOf(t) < 0) tries.push(t); }
+    if (dongNo) { add(name + " " + dongNo + "동"); add(first + " " + dongNo + "동"); }
+    add(name); add(first);
+
+    var btn = $("#geo-find");
+    btn.disabled = true;
+    out.innerHTML = '<p class="geo-msg">⏳ "' + RE.escapeHTML(tries[0]) + '" 위치를 찾는 중…</p>';
+    var i = 0;
+    (function next() {
+      if (i >= tries.length) {
+        btn.disabled = false;
+        out.innerHTML = '<p class="geo-msg bad">도안동 안에서 "' + RE.escapeHTML(q) + '"을(를) 찾지 못했습니다. 검색어를 고치거나 지도를 클릭해 지정하세요.</p>';
+        return;
+      }
+      var t = tries[i++];
+      kakaoKeyword(t).then(function (list) {
+        list = list.filter(function (r) { return RE.isInDoanDong(Number(r.y), Number(r.x)); });
+        if (!list.length) { next(); return; }
+        // 해당동 번호가 이름에 들어간 결과를 우선
+        if (dongNo) {
+          var re = new RegExp("(^|\\D)" + dongNo + "\\s*동");
+          list.sort(function (a, b) { return (re.test(b.place_name) ? 1 : 0) - (re.test(a.place_name) ? 1 : 0); });
+        }
+        btn.disabled = false;
+        var best = list[0];
+        var exactDong = dongNo && new RegExp("(^|\\D)" + dongNo + "\\s*동").test(best.place_name);
+        applyGeo(best);
+        var note = dongNo && !exactDong ? " — " + dongNo + "동 위치는 찾지 못해 단지 위치로 지정했습니다. 필요하면 지도를 클릭해 조정하세요." : "";
+        out.innerHTML = '<p class="geo-msg ok">✓ "' + RE.escapeHTML(best.place_name) + '" 위치로 지정했습니다' + RE.escapeHTML(note) + '</p>' +
+          (list.length > 1 ? '<div class="geo-cands"><span class="muted">다른 후보:</span> ' + list.slice(1, 6).map(function (r, k) {
+            return '<button type="button" class="btn btn-line btn-sm" data-k="' + (k + 1) + '">' + RE.escapeHTML(r.place_name) + "</button>";
+          }).join(" ") + "</div>" : "");
+        $$(".geo-cands button", out).forEach(function (b) {
+          b.addEventListener("click", function () {
+            var r = list[Number(b.dataset.k)];
+            applyGeo(r);
+            $(".geo-msg", out).textContent = '✓ "' + r.place_name + '" 위치로 지정했습니다';
+          });
+        });
+      });
+    })();
+  }
+  function applyGeo(r) {
+    form.latitude.value = Number(r.y).toFixed(6);
+    form.longitude.value = Number(r.x).toFixed(6);
+    syncMarker(true);
+  }
+  $("#geo-find").addEventListener("click", geoFind);
+
   form.latitude.addEventListener("input", function () { syncMarker(true); });
   form.longitude.addEventListener("input", function () { syncMarker(true); });
 

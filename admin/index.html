@@ -116,7 +116,12 @@
           <label class="span3">설명<textarea name="description" rows="4" maxlength="1000" placeholder="동·호수, 임차인 정보, 개인 연락처는 적지 마세요."></textarea></label>
 
           <fieldset class="span3">
-            <legend>위치 (도안동 경계 안만 허용) — 지도를 클릭해 좌표를 지정하세요</legend>
+            <legend>위치 (도안동 경계 안만 허용) — 아파트명·해당동으로 찾거나 지도를 클릭해 지정하세요</legend>
+            <div class="row geo-search">
+              <label class="geo-q-label">위치 검색어 (매물명의 아파트 이름 + 해당동)<input id="geo-q" autocomplete="off" placeholder="예: 도안아이파크 1503동"></label>
+              <button type="button" class="btn btn-green" id="geo-find">📍 매물명·해당동으로 위치 찾기</button>
+            </div>
+            <div id="geo-results" aria-live="polite"></div>
             <div class="row">
               <label>위도<input name="latitude" inputmode="decimal" placeholder="36.3175"></label>
               <label>경도<input name="longitude" inputmode="decimal" placeholder="127.3486"></label>
