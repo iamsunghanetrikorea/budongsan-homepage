@@ -143,8 +143,11 @@
         <ul class="errors" id="errors" aria-live="assertive"></ul>
         <div class="form-actions">
           <div class="form-actions-main">
-            <button type="submit" class="btn btn-green">내용저장</button>
-            <button type="button" class="btn btn-orange" id="form-publish">홈페이지에 게시</button>
+            <p class="final-note"><span class="hand" aria-hidden="true">👇</span> (최종반영) 수정한 내용은 내용 저장 버튼을 누르고, 홈페이지에 게시 버튼을 누르세요</p>
+            <div class="form-actions-btns">
+              <button type="submit" class="btn btn-green btn-xl">내용 저장</button>
+              <button type="button" class="btn btn-orange btn-xl" id="form-publish">홈페이지에 게시</button>
+            </div>
           </div>
           <button type="button" class="btn btn-line danger" id="delete">삭제</button>
         </div>
@@ -156,7 +159,7 @@
       <ol>
         <li><b>처음 한 번:</b> [GitHub 연결 설정]에서 토큰을 입력합니다.</li>
         <li><b>저장소에서 불러오기</b>로 홈페이지의 최신 매물을 가져옵니다. (연결되어 있으면 열 때 자동으로 불러옵니다)</li>
-        <li>매물을 추가·수정하고 사진을 넣은 뒤 <b>내용저장</b>을 누릅니다. 여러 건을 한꺼번에 해도 됩니다.</li>
+        <li>매물을 추가·수정하고 사진을 넣은 뒤 <b>내용 저장</b>을 누릅니다. 여러 건을 한꺼번에 해도 됩니다.</li>
         <li><b>홈페이지에 게시</b>를 누르면 매물 데이터와 사진이 함께 올라가고, 1~3분 뒤 홈페이지에 반영됩니다.</li>
       </ol>
       <p class="muted">게시 전에는 이 PC 브라우저에만 임시 저장됩니다. 선택한 사진은 게시할 때 올라가므로, 게시 전에 창을 닫으면 사진을 다시 선택해야 합니다.</p>

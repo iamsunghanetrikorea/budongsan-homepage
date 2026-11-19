@@ -56,8 +56,12 @@ fieldset.money { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr))
 .thumbs img { width: 120px; height: 84px; object-fit: cover; border-radius: 6px; background: #eef1f4; }
 .errors { color: var(--red); font-weight: 600; padding-left: 20px; }
 .errors li.warn { color: #8a5a00; }
-.form-actions { display: flex; gap: 10px; justify-content: space-between; margin-top: 8px; }
-.form-actions-main { display: flex; gap: 10px; flex-wrap: wrap; }
+.form-actions { display: flex; gap: 10px; justify-content: space-between; align-items: flex-end; margin-top: 8px; }
+.form-actions-main { display: flex; flex-direction: column; gap: 8px; }
+.form-actions-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+.final-note { margin: 0; color: #d0021b; font-weight: 700; }
+.final-note .hand { font-size: 1.6rem; vertical-align: middle; }
+.btn-xl { min-height: 80px; padding: 0 28px; font-size: 2rem; border-radius: 12px; }
 .help ol { padding-left: 20px; margin: 8px 0 0; display: grid; gap: 4px; }
 .invalid { border-color: var(--red) !important; background: #fff6f5 !important; }
 @media (max-width: 800px) {

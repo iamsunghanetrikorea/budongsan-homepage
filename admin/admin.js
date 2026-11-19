@@ -568,7 +568,7 @@
       renderThumbs();
       state.dirty = true;
       msg(ghToken()
-        ? files.length + "장을 최적화했습니다. [내용저장] → [홈페이지에 게시]를 누르면 함께 올라갑니다."
+        ? files.length + "장을 최적화했습니다. [내용 저장] → [홈페이지에 게시]를 누르면 함께 올라갑니다."
         : files.length + "장을 WebP로 변환해 다운로드했습니다. GitHub 연결 전이므로 저장소의 assets/properties/ 폴더로 직접 옮겨야 합니다.");
     }).catch(function (err) { msg(err.message, true); });
   });
@@ -678,7 +678,7 @@
   /* 홈페이지에 게시: 매물 데이터 + 새 사진을 커밋 1개로 올림 */
   function ghPublish(opts) {
     if (!ghToken()) { openGhDialog(); msg("먼저 GitHub 연결(토큰)을 설정하세요.", true); return; }
-    if (!(opts && opts.saved) && state.editingId && !$("#editor").hidden && !confirm("편집 중인 매물은 [내용저장]을 눌러야 게시에 포함됩니다. 저장된 내용만 게시할까요?")) return;
+    if (!(opts && opts.saved) && state.editingId && !$("#editor").hidden && !confirm("편집 중인 매물은 [내용 저장]을 눌러야 게시에 포함됩니다. 저장된 내용만 게시할까요?")) return;
     var problem = checkPublishable();
     if (problem) { msg(problem, true, true); return; }
     if (!state.items.length && !confirm("매물이 0건입니다. 홈페이지의 매물을 모두 비울까요?")) return;
