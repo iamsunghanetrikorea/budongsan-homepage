@@ -61,6 +61,10 @@ fieldset.money { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr))
 .form-actions-btns { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 12px; }
 .final-note { margin: 0; color: #d0021b; font-weight: 700; }
 .final-note .hand { font-size: 1.6rem; vertical-align: middle; }
+.save-status { margin: 0; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 1.05rem; max-width: 640px; }
+.save-status.busy { background: #fff6e0; color: #8a5a00; }
+.save-status.ok { background: #e6f6ec; color: #136b34; }
+.save-status.err { background: #fde8e8; color: #b00020; }
 .btn-xl { min-height: 80px; padding: 0 28px; font-size: 2rem; border-radius: 12px; }
 .help ol { padding-left: 20px; margin: 8px 0 0; display: grid; gap: 4px; }
 .invalid { border-color: var(--red) !important; background: #fff6f5 !important; }

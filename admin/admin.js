@@ -174,6 +174,7 @@
     state.editingId = p.id;
     state.isNew = !!isNew;
     $("#editor").hidden = false;
+    saveStatus("");
     $("#edit-id").textContent = p.id + (isNew ? " (새 매물)" : "");
     $("#delete").hidden = !!isNew;
     form.reset();
@@ -278,9 +279,28 @@
     return out;
   }
 
+  /** 내용 저장 진행 상황(버튼 아래) 표시. kind: "busy" | "ok" | "err" | "" */
+  function saveStatus(text, kind) {
+    var el = $("#save-status");
+    el.className = "save-status" + (kind ? " " + kind : "");
+    el.textContent = text;
+    el.hidden = !text;
+  }
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
-    saveForm();
+    var btn = $("#save-btn");
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = "저장 중…";
+    saveStatus("⏳ 1/2 입력값을 검증하고 있습니다…", "busy");
+    // 진행 표시가 화면에 그려진 뒤 저장
+    setTimeout(function () {
+      var ok = saveForm();
+      btn.disabled = false;
+      btn.textContent = ok ? "✓ 저장됨" : "내용 저장";
+      if (ok) setTimeout(function () { btn.textContent = "내용 저장"; }, 2000);
+    }, 400);
   });
 
   /** 편집 중인 매물을 검증·저장. 성공하면 true */
@@ -293,7 +313,12 @@
     }).join("");
     var errors = res.filter(function (r) { return !r.warn; });
     errors.forEach(function (r) { var el = form.elements[r.field]; if (el && el.classList) el.classList.add("invalid"); });
-    if (errors.length) { msg("입력값을 확인하세요 (" + errors.length + "건).", true); return false; }
+    if (errors.length) {
+      msg("입력값을 확인하세요 (" + errors.length + "건).", true);
+      saveStatus("✗ 저장하지 못했습니다 — 입력값 오류 " + errors.length + "건. 위의 빨간 항목을 고친 뒤 다시 누르세요.", "err");
+      return false;
+    }
+    saveStatus("⏳ 2/2 저장하고 있습니다…", "busy");
 
     var idx = -1;
     state.items.forEach(function (x, i) { if (x.id === p.id) idx = i; });
@@ -312,6 +337,8 @@
     renderRows();
     var warns = res.length - errors.length;
     msg(p.id + " 저장됨" + (warns ? " (경고 " + warns + "건 확인)" : "") + ". 홈페이지에 반영하려면 [홈페이지에 게시]를 누르세요.");
+    saveStatus("✓ 저장 완료 — " + p.id + " (" + new Date().toLocaleTimeString("ko-KR") + ")" +
+      (warns ? " · 경고 " + warns + "건 확인" : "") + ". 아직 홈페이지에는 반영되지 않았습니다. [홈페이지에 게시]를 누르세요.", "ok");
     return true;
   }
 
