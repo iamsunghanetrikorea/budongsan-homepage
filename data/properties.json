@@ -1,7 +1,7 @@
 [
   {
     "id": "DA-0001",
-    "title": "도안아이파크 파인공인중개사사무소",
+    "title": "도안수목토 아파트",
     "transaction": "sale",
     "propertyType": "apartment",
     "priceKRW": 595000000,
@@ -10,15 +10,15 @@
     "maintenanceFeeKRW": 280000,
     "areaM2": 84.97,
     "supplyAreaM2": 120.96,
-    "buildingDong": "1503",
-    "floor": "11",
+    "buildingDong": "113",
+    "floor": "5",
     "totalFloors": null,
     "rooms": 3,
     "baths": 2,
     "moveInDate": "즉시입주",
     "addressDong": "도안동",
-    "latitude": 36.321851,
-    "longitude": 127.347103,
+    "latitude": 36.318658,
+    "longitude": 127.345823,
     "highlights": [
       "빠른 입주 가능.",
       "도솔산과 갑천뷰.",
