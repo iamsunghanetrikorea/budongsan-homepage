@@ -57,6 +57,7 @@ fieldset.money { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr))
 .errors { color: var(--red); font-weight: 600; padding-left: 20px; }
 .errors li.warn { color: #8a5a00; }
 .form-actions { display: flex; gap: 10px; justify-content: space-between; margin-top: 8px; }
+.form-actions-main { display: flex; gap: 10px; flex-wrap: wrap; }
 .help ol { padding-left: 20px; margin: 8px 0 0; display: grid; gap: 4px; }
 .invalid { border-color: var(--red) !important; background: #fff6f5 !important; }
 @media (max-width: 800px) {

@@ -280,6 +280,11 @@
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
+    saveForm();
+  });
+
+  /** 편집 중인 매물을 검증·저장. 성공하면 true */
+  function saveForm() {
     var p = readForm();
     var res = validate(p);
     $$(".invalid", form).forEach(function (el) { el.classList.remove("invalid"); });
@@ -288,7 +293,7 @@
     }).join("");
     var errors = res.filter(function (r) { return !r.warn; });
     errors.forEach(function (r) { var el = form.elements[r.field]; if (el && el.classList) el.classList.add("invalid"); });
-    if (errors.length) { msg("입력값을 확인하세요 (" + errors.length + "건).", true); return; }
+    if (errors.length) { msg("입력값을 확인하세요 (" + errors.length + "건).", true); return false; }
 
     var idx = -1;
     state.items.forEach(function (x, i) { if (x.id === p.id) idx = i; });
@@ -306,8 +311,9 @@
     $("#delete").hidden = false;
     renderRows();
     var warns = res.length - errors.length;
-    msg(p.id + " 저장됨" + (warns ? " (경고 " + warns + "건 확인)" : "") + ". 게시하려면 [게시용 JSON 다운로드]를 누르세요.");
-  });
+    msg(p.id + " 저장됨" + (warns ? " (경고 " + warns + "건 확인)" : "") + ". 홈페이지에 반영하려면 [홈페이지에 게시]를 누르세요.");
+    return true;
+  }
 
   function priceChanged(a, b) {
     return a.priceKRW !== b.priceKRW || a.depositKRW !== b.depositKRW || a.monthlyRentKRW !== b.monthlyRentKRW;
@@ -562,7 +568,7 @@
       renderThumbs();
       state.dirty = true;
       msg(ghToken()
-        ? files.length + "장을 최적화했습니다. [검증 후 저장] → [홈페이지에 게시]를 누르면 함께 올라갑니다."
+        ? files.length + "장을 최적화했습니다. [내용저장] → [홈페이지에 게시]를 누르면 함께 올라갑니다."
         : files.length + "장을 WebP로 변환해 다운로드했습니다. GitHub 연결 전이므로 저장소의 assets/properties/ 폴더로 직접 옮겨야 합니다.");
     }).catch(function (err) { msg(err.message, true); });
   });
@@ -670,15 +676,15 @@
   }
 
   /* 홈페이지에 게시: 매물 데이터 + 새 사진을 커밋 1개로 올림 */
-  function ghPublish() {
+  function ghPublish(opts) {
     if (!ghToken()) { openGhDialog(); msg("먼저 GitHub 연결(토큰)을 설정하세요.", true); return; }
-    if (state.editingId && !$("#editor").hidden && !confirm("편집 중인 매물은 [검증 후 저장]을 눌러야 게시에 포함됩니다. 저장된 내용만 게시할까요?")) return;
+    if (!(opts && opts.saved) && state.editingId && !$("#editor").hidden && !confirm("편집 중인 매물은 [내용저장]을 눌러야 게시에 포함됩니다. 저장된 내용만 게시할까요?")) return;
     var problem = checkPublishable();
     if (problem) { msg(problem, true, true); return; }
     if (!state.items.length && !confirm("매물이 0건입니다. 홈페이지의 매물을 모두 비울까요?")) return;
 
-    var btn = $("#gh-publish");
-    btn.disabled = true;
+    var btns = $$("#gh-publish, #form-publish");
+    btns.forEach(function (b) { b.disabled = true; });
     var data = exportData();
     var json = JSON.stringify(data, null, 2) + "\n";
     var branch = encodeURIComponent(GH.branch);
@@ -744,7 +750,7 @@
         if (e.cancelled) msg(e.message);
         else msg("게시 실패: " + e.message, true, true);
       })
-      .then(function () { btn.disabled = false; });
+      .then(function () { btns.forEach(function (b) { b.disabled = false; }); });
   }
 
   /* 배포(GitHub Actions) 진행 상황 확인 */
@@ -787,7 +793,12 @@
     if (!GH.owner) { msg("js/config.js의 github 설정이 비어 있습니다.", true); return; }
     ghLoad(false);
   });
-  $("#gh-publish").addEventListener("click", ghPublish);
+  $("#gh-publish").addEventListener("click", function () { ghPublish(); });
+  // 편집 폼의 [홈페이지에 게시]: 현재 내용을 먼저 저장한 뒤 게시
+  $("#form-publish").addEventListener("click", function () {
+    if (!form.reportValidity()) return;
+    if (saveForm()) ghPublish({ saved: true });
+  });
   $("#gh-forget").addEventListener("click", function () {
     setToken("", false);
     $("#gh-test-result").textContent = "이 PC에서 토큰을 삭제했습니다.";
