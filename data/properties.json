@@ -1,34 +1,34 @@
 [
   {
     "id": "DA-0001",
-    "title": "도안수목토 아파트",
+    "title": "도안아이파크아파트",
     "transaction": "sale",
     "propertyType": "apartment",
-    "priceKRW": 595000000,
+    "priceKRW": 575000000,
     "depositKRW": null,
     "monthlyRentKRW": null,
     "maintenanceFeeKRW": 280000,
-    "areaM2": 84.97,
-    "supplyAreaM2": 120.96,
-    "buildingDong": "113",
-    "floor": "5",
+    "areaM2": 84.93,
+    "supplyAreaM2": 116.1,
+    "buildingDong": "1505",
+    "floor": "18",
     "totalFloors": null,
     "rooms": 3,
     "baths": 2,
-    "moveInDate": "즉시입주",
+    "moveInDate": "2028.1",
     "addressDong": "도안동",
-    "latitude": 36.318658,
-    "longitude": 127.345823,
+    "latitude": null,
+    "longitude": null,
     "highlights": [
-      "빠른 입주 가능.",
-      "도솔산과 갑천뷰.",
-      "시에 2대."
+      "-중앙 잔디광장뷰가 이쁜 매물",
+      "-안방 넓은 타입",
+      "-임차인승계조건(28년 1월)"
     ],
-    "description": null,
+    "description": "1. C타입 특징\n-안방 알파룸 확장가능.\n-침실2에 한면가득 붙박이장\n-현관 팬트리와 대면형 주방\n\n2.도안아이파크아파트 장점\n-우수한교육환경: 초품아.단지인근 도안중학교,도안고등학교, 학원밀집.\n-입지및교통: 도안대로 및 동서대로와 접해있고 서대전IC와유 성IC 이용용이.\n-중앙잔디광장: 넓은중앙 잔디광장과 수변공간이 조성. 동간거리가 넉넉하고 탁트인개방감 제공.\n-공원및주변인프라: 단지외곽의산책로, 자전거도로, 도안공원, 옥녀봉, 갑천호수공원등 녹지공간이 풍부하여 주거 쾌적성이 훌륭.\n\n*도안IPARK 파인 공인중개사 사무소는\n언제나고객님께 최고의정직, 최고의친절, 최고의가치를 약속드리며 고객의 입장에서 끝까지 최선을 다하는 책임중개로 보답하도록 노력하겠습니다\n편하게 연락주세요~ 친절한 상담 대기중입니다.",
     "images": [],
     "featured": false,
     "status": "published",
-    "updatedAt": "2026-11-14",
-    "lastCheckedAt": "2026-11-14"
+    "updatedAt": "2026-11-23",
+    "lastCheckedAt": "2026-11-23"
   }
 ]
